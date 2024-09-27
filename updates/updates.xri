@@ -7,7 +7,7 @@
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
       <package fileName="nightphotons-2024-09-27.zip"
-               sha1="b61f3b8a27e13927aed8e4b15045f05fd3431392"
+               sha1="28fbebdad2c9412a8e63fcc39390724bada0bd48"
                type="script"
                releaseDate="20240927">
          <title>
