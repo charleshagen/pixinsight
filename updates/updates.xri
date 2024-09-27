@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xri version="1.0">
+  <description>
+     <p>
+        Repository for utilities and scripts by Charles Hagen.
+     </p>
+  </description>
+   <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
+      <package fileName="nightphotons-2024-09-27.zip"
+               sha1="b61f3b8a27e13927aed8e4b15045f05fd3431392"
+               type="script"
+               releaseDate="20240927">
+         <title>
+            Continuum Subtraction v1.0-beta
+         </title>
+         <remove/>
+         <description>
+            <p>
+               Pre-release 1.0.0-beta
+            </p>
+         </description>
+      </package>
+   </platform>
+</xri>
