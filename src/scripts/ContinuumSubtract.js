@@ -6,7 +6,7 @@
 #feature-id    Utilities > ContinuumSubtract
 #feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce subtracted images.
 
-#define VERSION "1.0.0-beta2"
+#define VERSION "1.0.0"
 
 var ToolParameters = {
     nbStarView: undefined,

@@ -7,16 +7,16 @@
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
       <package fileName="nightphotons-2024-09-27.zip"
-               sha1="754a24117173ac2ba5a616cb8673f6f8c7948901"
+               sha1="2dca0b94d1fdd350a456245366832d16ba792bdd"
                type="script"
                releaseDate="20240927">
          <title>
-            Continuum Subtraction v1.0.0-beta2
+            Continuum Subtraction v1.0.0
          </title>
          <remove/>
          <description>
             <p>
-               Pre-release 1.0.0-beta2
+               Release 1.0.0
             </p>
          </description>
       </package>
