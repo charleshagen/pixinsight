@@ -6,7 +6,7 @@
 #feature-id    Utilities > ContinuumSubtract
 #feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce subtracted images.
 
-#define VERSION "1.0.0-beta"
+#define VERSION "1.0.0-beta2"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -113,7 +113,7 @@ function ContinuumSubtract() {
             }
 
             if (!generateStarless) {
-                console.warningln("Error: One or both of the starless images are undefined. Cannot create starless image!");
+                console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image!");
             }
         }
     }
@@ -121,10 +121,14 @@ function ContinuumSubtract() {
     let broadbandImage = ToolParameters.bbStarView.image;
     let narrowbandImage = ToolParameters.nbStarView.image;
 
+    // Star detection
     let stars = DetectStars(broadbandImage);
+
+    // PSF generation
     let broadbandPSF = GeneratePSFs(ToolParameters.bbStarView, stars);
     let narrowbandPSF = GeneratePSFs(ToolParameters.nbStarView, stars);
 
+    // Correlation
     let starFluxes = [];
     let ratioList = [];
     for (let i = 0; i < stars.length; ++i) {
@@ -145,6 +149,17 @@ function ContinuumSubtract() {
         }
     }
 
+    // Error checking
+    if (ratioList.length == 0) {
+        console.criticalln("Error: No valid star pairs detected, cannot generate subtracted image.");
+        return;
+    }
+
+    if (ratioList.length < 50) {
+        console.warningln("Warning: Only " + ratioList.length + " valid star pairs detected, results may be inaccurate.");
+    }
+
+    // Ratio Calculation
     ratio = median(ratioList);
     SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, "NB_Stars");
     if (generateStarless) {
@@ -178,6 +193,7 @@ function DetectStars(sourceImage) {
         };
 
     let S = detector.stars(sourceImage);
+    console.writeln("");
 
     let stars = []
     let radius = 2;
@@ -281,7 +297,7 @@ function MainDialog() {
         wordWrapping = true;
         useRichText = true;
         margin = 4;
-        text = "<b>ContinuumSubtract <span style='color:red;'>v" + VERSION + "</span></b> | Charles Hagen<br></br><br></br>"
+        text = "<b>ContinuumSubtract v" + VERSION + "</b> | Charles Hagen<br></br><br></br>"
             + "Provide narrowband and continuum images as well as the starless images "
             + "(optional) for subtraction. The script will generate an image for both the star-"
             + "containing image, as well as the starless image if enabled. Create a process icon "
@@ -504,11 +520,6 @@ function MainDialog() {
     this.maxStars = new NumericControl(this);
     with (this.maxStars) {
         // toolTip = "Increase to include more stars in the calculation. Default is 200.";
-        toolTip = "<b>ContinuumSubtract <span style='color:red;'>v" + VERSION + "</span></b> | Charles Hagen<br></br><br></br>"
-        + "Provide narrowband and continuum images as well as the starless images "
-        + "(optional) for subtraction. The script will generate an image for both the star-"
-        + "containing image, as well as the starless image if enabled. Create a process icon "
-        + "with the view IDs and apply as a process icon to run without opening the dialog.";
         setPrecision(2);
         setRange(50, 1000);
         setReal(true);
