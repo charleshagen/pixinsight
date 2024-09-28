@@ -7,16 +7,16 @@
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
       <package fileName="nightphotons-2024-09-27.zip"
-               sha1="2dca0b94d1fdd350a456245366832d16ba792bdd"
+               sha1="e51d7796c3bde91bd81c452215daadcc879be9d2"
                type="script"
                releaseDate="20240927">
          <title>
-            Continuum Subtraction v1.0.0
+            Continuum Subtraction v1.0.1
          </title>
          <remove/>
          <description>
             <p>
-               Release 1.0.0
+               Release 1.0.1 - Bug fixes: Missing #include caused previous versions not to work
             </p>
          </description>
       </package>

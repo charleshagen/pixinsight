@@ -1,3 +1,4 @@
+#include <pjsr/StarDetector.jsh>
 #include <pjsr/StdButton.jsh>
 #include <pjsr/StdIcon.jsh>
 #include <pjsr/Sizer.jsh>
@@ -6,7 +7,7 @@
 #feature-id    Utilities > ContinuumSubtract
 #feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce subtracted images.
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.1"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -160,7 +161,7 @@ function ContinuumSubtract() {
     }
 
     // Ratio Calculation
-    ratio = median(ratioList);
+    let ratio = median(ratioList);
     SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, "NB_Stars");
     if (generateStarless) {
         SubtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, "NB_Starless");
@@ -219,7 +220,7 @@ function DetectStars(sourceImage) {
 function GeneratePSFs(sourceImage, starsList) {
     let P = new DynamicPSF;
     with (P) {
-        views = [[sourceImage.id]]; 
+        views = [[sourceImage.id]];
         astrometry = false;
         autoAperture = true;
         searchRadius = 2;
