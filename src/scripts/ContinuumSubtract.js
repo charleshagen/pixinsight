@@ -4,10 +4,10 @@
 #include <pjsr/Sizer.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#feature-id    Utilities > ContinuumSubtract
-#feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce subtracted images.
+#feature-id    Utilities > PhotometricContinuumSubtraction
+#feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce continuum-free narrowband images.
 
-#define VERSION "1.0.1"
+#define VERSION "1.0.2"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -162,9 +162,9 @@ function ContinuumSubtract() {
 
     // Ratio Calculation
     let ratio = median(ratioList);
-    SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, "NB_Stars");
+    SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, (ToolParameters.nbStarView.id + "_sub"));
     if (generateStarless) {
-        SubtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, "NB_Starless");
+        SubtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, (ToolParameters.nbStarlessView.id + "_sub"));
     }
 }
 
@@ -283,10 +283,12 @@ function MainDialog() {
     var self = this;
 
     // Window parameters
-    this.minWidth = 300;
-    this.width = 400;
+    var panelWidth = this.font.width("<b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen");
     var labelWidth1 = this.font.width("Narrowband:");
     var labelWidth2 = this.font.width("Maximum Stars: ");
+
+    this.minWidth = panelWidth;
+    this.width = 400;
 
 
 
@@ -298,11 +300,16 @@ function MainDialog() {
         wordWrapping = true;
         useRichText = true;
         margin = 4;
-        text = "<b>ContinuumSubtract v" + VERSION + "</b> | Charles Hagen<br></br><br></br>"
-            + "Provide narrowband and continuum images as well as the starless images "
-            + "(optional) for subtraction. The script will generate an image for both the star-"
-            + "containing image, as well as the starless image if enabled. Create a process icon "
-            + "with the view IDs and apply as a process icon to run without opening the dialog.";
+        // text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p><br></br>"
+        //     + "<p>Provide narrowband and broadband / continuum images as well as the starless images "
+        //     + "(optional) for subtraction. The script will generate an image for both the star-"
+        //     + "containing image, as well as the starless image if enabled.</p><br></br>" 
+        //     + "<i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i>";
+        text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p>"
+            + "<p>Provide narrowband and broadband star-contining linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
+            + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images. For images with "
+            + "severe aberrations, it may be beneficial to run BlurX in correct only mode before using PCS.</p>" 
+            + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
     }
 
 
@@ -493,6 +500,7 @@ function MainDialog() {
     // Group Sizer
     this.starlessGroup = new GroupBox(this)
     with (this.starlessGroup) {
+        toolTip = "<p> Generate starless subtracted image.</p>"
         titleCheckBox = true;
         checked = ToolParameters.starlessEnabled;
         onCheck = function () {
@@ -520,7 +528,9 @@ function MainDialog() {
 
     this.maxStars = new NumericControl(this);
     with (this.maxStars) {
-        // toolTip = "Increase to include more stars in the calculation. Default is 200.";
+        toolTip = "<p> This field controls the maximum number of stars that will be included in the calculation, "+ 
+        "higher values will include more stars which will take longer, but may provide more accurate results."+
+        "<p>Default value is 200 stars</p>"
         setPrecision(2);
         setRange(50, 1000);
         setReal(true);
@@ -549,7 +559,10 @@ function MainDialog() {
 
     this.maxFlux = new NumericControl(this);
     with (this.maxFlux) {
-        // toolTip = "Increase to include brighter stars. Using clipped stars can cause inaccuracy. Default is 2.";
+        toolTip = "<p> This field controls the maximum flux that a star can have to be included in the flux calculation, "+ 
+        "higher values will be more tollerant of brighter stars and may begin to include saturated stars, which can degrade "+
+        "the performance of the routine.</p>" +
+        "<p>Default value is 2</p>"
         setPrecision(2);
         setRange(0.8, 5);
         setReal(true);
@@ -655,6 +668,7 @@ function showDialog() {
 function main() {
     let retVal = 0;
     if (Parameters.isViewTarget) {
+        console.show();
         ToolParameters.load();
         // ToolParameters.nbStarlessView = Parameters.targetView; //Parameters.targetView is the image being applied to
         retVal = 1; // Dialog is never shown
