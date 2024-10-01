@@ -6,21 +6,17 @@
      </p>
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
-      <package fileName="nightphotons-2024-09-28.zip"
-               sha1="b827c634d2903094715501d425677821629e42d0"
+      <package fileName="nightphotons-2024-10-01.zip"
+               sha1="ca2840d598669c81245d9a96db1ff2f8bdcbaf2d"
                type="script"
-               releaseDate="20240928">
+               releaseDate="20241001">
          <title>
-            Photometric Continuum Subtraction v1.0.2
+            NightPhotons processing suite 2024-10-01
          </title>
          <remove/>
          <description>
             <p>
-               Release 1.0.2: 
-               - Rename script 
-               - Edit description
-               - Add tooltips
-               - Change output name behavior
+               ApplySTF Release 1.2.0
             </p>
          </description>
       </package>
