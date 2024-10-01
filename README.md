@@ -1,5 +1,6 @@
 # Scripts List #
-1. **ContinuumSubtract** | ``Utilities > ContinuumSubtract``
+1. **ApplySTF** | ``NightPhotons > ApplySTF``
+2. **PhotometricContinuumSubtraction** | ``NightPhotons > PhotometricContinuumSubtraction``
 
 ## Update procedure: ##
 1. zip src directory
