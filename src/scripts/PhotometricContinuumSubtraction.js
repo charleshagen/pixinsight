@@ -7,7 +7,7 @@
 #feature-id    NightPhotons > PhotometricContinuumSubtraction
 #feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce continuum-free narrowband images.
 
-#define VERSION "1.0.2"
+#define VERSION "1.0.3"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -89,11 +89,11 @@ function ContinuumSubtract() {
             return;
         }
         if (!ToolParameters.nbStarView.image.isGrayscale) {
-            console.errorln("Invalid colorspace for image: " + ToolParameters.nbStarView.id + ". Must be grayscale.");
+            console.criticalln("Invalid colorspace for image: " + ToolParameters.nbStarView.id + ". Must be grayscale.");
             return;
         }
         if (!ToolParameters.bbStarView.image.isGrayscale) {
-            console.errorln("Invalid colorspace for image: " + ToolParameters.bbStarView.id + ". Must be grayscale.");
+            console.criticalln("Invalid colorspace for image: " + ToolParameters.bbStarView.id + ". Must be grayscale.");
             return;
         }
         // See if starless is enabled
@@ -104,11 +104,11 @@ function ContinuumSubtract() {
             }
             if (generateStarless) {
                 if (!ToolParameters.nbStarlessView.image.isGrayscale) {
-                    console.errorln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
+                    console.criticalln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
                     generateStarless = false;
                 }
                 if (!ToolParameters.bbStarlessView.image.isGrayscale) {
-                    console.errorln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
+                    console.criticalln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
                     generateStarless = false;
                 }
             }
@@ -306,7 +306,7 @@ function MainDialog() {
         //     + "containing image, as well as the starless image if enabled.</p><br></br>"
         //     + "<i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i>";
         text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>Provide narrowband and broadband star-contining linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
+            + "<p>Provide grayscale narrowband and broadband star-contining linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
             + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images. For images with "
             + "severe aberrations, it may be beneficial to run BlurX in correct only mode before using PCS.</p>"
             + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
