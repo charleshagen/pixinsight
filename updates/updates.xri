@@ -13,7 +13,10 @@
          <title>
             NightPhotons processing suite 2024-10-12
          </title>
-         <remove/>
+         <remove>
+            ApplySTF.js,
+            PhotometricContinuumSubtraction.js
+         </remove>
          <description>
          <h3>ApplySTF: Release 1.2.1</h3>
          <ul>
