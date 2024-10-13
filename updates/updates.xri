@@ -14,9 +14,9 @@
             NightPhotons processing suite 2024-10-12
          </title>
          <remove>
-            ApplySTF.js,
-            ContinuumSubtract.js,
-            PhotometricContinuumSubtraction.js
+            src/scripts/ApplySTF.js,
+            src/scripts/ContinuumSubtract.js,
+            src/scripts/PhotometricContinuumSubtraction.js
          </remove>
          <description>
          <h3>ApplySTF: Release 1.2.1</h3>
