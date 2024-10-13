@@ -3,10 +3,12 @@
 #include <pjsr/Sizer.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#feature-id    NightPhotons > ApplySTF
+#feature-id    ApplySTF : NightPhotons > ApplySTF
+#feature-icon  @script_icons_dir/ApplySTF.svg
 #feature-info  This script is used to apply the active STF to the image
 
-#define VERSION "1.2.0"
+#define TITLE "ApplySTF"
+#define VERSION "1.2.1"
 
 var ToolParameters = {
    targetView: undefined,
@@ -73,25 +75,29 @@ function ApplySTF() {
 function MainDialog() {
    this.__base__ = Dialog;
    this.__base__();
-
    var self = this;
 
    // MAIN DIALOG BODY
 
    // Window parameters
+   this.windowTitle = TITLE;
    var panelWidth = this.font.width("<b>ApplySTF v" + VERSION + "</b> | Charles Hagen");
    this.minWidth = panelWidth;
    this.width = 300;
 
-   // Description
+    // --------------------------------------------------------------
+    // Description & Title
+    // --------------------------------------------------------------
    this.label = new Label(this);
-   this.label.wordWrapping = true;
-   this.label.useRichText = true;
-   this.label.margin = 4;
-   this.label.text = "<b>ApplySTF v" + VERSION + "</b> | Charles Hagen<br></br><br></br>"
-      + "Execute to apply the currently active STF to the image permanently. "
-      + "Create an instance icon to apply the script to any image without opening "
-      + "the script dialog.";
+   with (this.label) {
+      wordWrapping = true;
+      useRichText = true;
+      margin = 4;
+      text = "<b>ApplySTF v" + VERSION + "</b> | Charles Hagen<br></br><br></br>"
+         + "Execute to apply the currently active STF to the image permanently. "
+         + "Create an instance icon to apply the script to any image without opening "
+         + "the script dialog.";
+   }
 
    // Target View List
    this.targetViewList = new ViewList(this);
@@ -123,7 +129,9 @@ function MainDialog() {
       title = "Target View";
    }
 
-   // Settings
+    // --------------------------------------------------------------
+    // Settings
+    // --------------------------------------------------------------
 
 
    this.respectMaskCheckbox = new CheckBox(this);
@@ -145,9 +153,10 @@ function MainDialog() {
    }
 
 
+    // --------------------------------------------------------------
+    // Bottom Button Row
+    // --------------------------------------------------------------
 
-
-   // BUTTON ROW
    this.newInstanceButton = new ToolButton(this);
    with (this.newInstanceButton) {
       icon = this.scaledResource(":/process-interface/new-instance.png");

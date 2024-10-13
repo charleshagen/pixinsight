@@ -1,13 +1,15 @@
+#feature-id    PhotometricContinuumSubtraction : NightPhotons > PhotometricContinuumSubtraction
+#feature-icon  @script_icons_dir/PhotometricContinuumSubtraction.svg
+#feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-containing and starless images to produce continuum-free narrowband images.
+
 #include <pjsr/StarDetector.jsh>
 #include <pjsr/StdButton.jsh>
 #include <pjsr/StdIcon.jsh>
 #include <pjsr/Sizer.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#feature-id    NightPhotons > PhotometricContinuumSubtraction
-#feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-contianing and starless images to produce continuum-free narrowband images.
-
-#define VERSION "1.0.3"
+#define TITLE "PhotometricContinuumSubtraction"
+#define VERSION "1.1.0"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -162,9 +164,16 @@ function ContinuumSubtract() {
 
     // Ratio Calculation
     let ratio = median(ratioList);
-    SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, (ToolParameters.nbStarView.id + "_sub"));
+
+    // Resulting Image Generation
+    let starID = generateValidID(ToolParameters.nbStarView.id + "_sub")
+    SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, starID);
+    ApplyAstrometricSolution(starID);
+    
     if (generateStarless) {
-        SubtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, (ToolParameters.nbStarlessView.id + "_sub"));
+        let starlessID = generateValidID(ToolParameters.nbStarlessView.id + "_sub")
+        SubtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, starlessID);
+        ApplyAstrometricSolution(starlessID);
     }
 }
 
@@ -243,6 +252,31 @@ function GeneratePSFs(sourceImage, starsList) {
     return P.psf;
 }
 
+function generateValidID(id) {
+    // Generate a new valid ID
+    let iteration = 1;
+    let newID = id + iteration;
+    if (View.viewById(id).isNull){
+        return id;
+    }
+    while(!View.viewById(newID).isNull) {
+        iteration += 1;
+        newID = id + iteration;
+    }
+    return newID;
+}
+
+function ApplyAstrometricSolution(id) {
+    // Prefer narrowband astrometric solution if available, default to broadband otherwise
+    if (ToolParameters.nbStarView.window.hasAstrometricSolution) {
+        View.viewById(id).window.copyAstrometricSolution(ToolParameters.nbStarView.window);
+        console.noteln(id + ": Astrometric solution applied from ", ToolParameters.nbStarView.id);
+    } else if (ToolParameters.bbStarView.window.hasAstrometricSolution) {
+        View.viewById(id).window.copyAstrometricSolution(ToolParameters.bbStarView.window);
+        console.noteln(id + ": Astrometric solution applied from ", ToolParameters.bbStarView.id);
+    }
+}
+
 function SubtractImage(img1, img2, scaleFactor, id) {
     let P = new PixelMath;
     P.expression = img1.id + "-("+img2.id+"-med("+img2.id+"))/"+scaleFactor;
@@ -264,7 +298,6 @@ function median(arr) {
     }
 
     arr.sort((a, b) => a - b); // Sort the array in ascending order
-
     const middleIndex = Math.floor(arr.length / 2);
 
     if (arr.length % 2 === 0) {
@@ -279,18 +312,16 @@ function median(arr) {
 function MainDialog() {
     this.__base__ = Dialog;
     this.__base__();
-
     var self = this;
-
+    
     // Window parameters
+    this.windowTitle = TITLE;
     var panelWidth = this.font.width("<b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen");
     var labelWidth1 = this.font.width("Narrowband:");
     var labelWidth2 = this.font.width("Maximum Stars: ");
 
     this.minWidth = panelWidth;
     this.width = 400;
-
-
 
     // --------------------------------------------------------------
     // Description & Title
@@ -306,7 +337,7 @@ function MainDialog() {
         //     + "containing image, as well as the starless image if enabled.</p><br></br>"
         //     + "<i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i>";
         text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>Provide grayscale narrowband and broadband star-contining linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
+            + "<p>Provide grayscale narrowband and broadband star-containing linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
             + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images. For images with "
             + "severe aberrations, it may be beneficial to run BlurX in correct only mode before using PCS.</p>"
             + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
@@ -593,7 +624,6 @@ function MainDialog() {
     }
 
 
-
     // --------------------------------------------------------------
     // Bottom Button Row
     // --------------------------------------------------------------
@@ -670,7 +700,6 @@ function main() {
     if (Parameters.isViewTarget) {
         console.show();
         ToolParameters.load();
-        // ToolParameters.nbStarlessView = Parameters.targetView; //Parameters.targetView is the image being applied to
         retVal = 1; // Dialog is never shown
     } else if (Parameters.isGlobalTarget) {
         ToolParameters.load(); // Load the parameters in global context

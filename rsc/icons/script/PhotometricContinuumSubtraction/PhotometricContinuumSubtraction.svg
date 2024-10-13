@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 28.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.2" baseProfile="tiny" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 x="0px" y="0px" viewBox="0 0 512 512" overflow="visible" xml:space="preserve">
+<linearGradient id="Gradient_00000057859562467241876500000016370588327945937596_" gradientUnits="userSpaceOnUse" x1="450.8879" y1="254.6827" x2="56.6656" y2="257.3494">
+	<stop  offset="0" style="stop-color:#EC008A"/>
+	<stop  offset="9.583637e-02" style="stop-color:#DF0A90"/>
+	<stop  offset="0.274" style="stop-color:#BC239F"/>
+	<stop  offset="0.5151" style="stop-color:#844DB7"/>
+	<stop  offset="0.8064" style="stop-color:#3785D7"/>
+	<stop  offset="1" style="stop-color:#00AEEF"/>
+</linearGradient>
+<path id="Gradient" fill="url(#Gradient_00000057859562467241876500000016370588327945937596_)" stroke="#000000" stroke-width="23.542" stroke-linecap="square" d="
+	M35.8,35.8h440.5v440.5H35.8L35.8,35.8z"/>
+<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="256.001" y1="278.7778" x2="256.001" y2="464.1133">
+	<stop  offset="0" style="stop-color:#000000"/>
+	<stop  offset="1" style="stop-color:#000000;stop-opacity:0"/>
+</linearGradient>
+<rect x="35.8" y="35.8" fill="url(#SVGID_1_)" stroke="#000000" stroke-width="23.542" stroke-linecap="square" width="440.5" height="440.5"/>
+<g id="Layer_2">
+</g>
+<g id="Stars">
+	<path fill="#FFFFFF" d="M272,170.6c0,21-17.6,38-39.4,38s-39.4-17-39.4-38c0,0,0,0,0,0c0-21,17.6-38,39.4-38h0
+		C254.4,132.5,272,149.5,272,170.6C272,170.5,272,170.5,272,170.6L272,170.6z"/>
+	<path fill="#FFFFFF" d="M96.2,197.5c0,8.6-7.3,15.6-16.2,15.6c0,0,0,0,0,0c-9,0-16.2-7-16.2-15.6l0,0c0-8.6,7.3-15.6,16.2-15.6
+		c0,0,0,0,0,0C88.9,181.9,96.2,188.9,96.2,197.5L96.2,197.5z"/>
+	<path fill="#FFFFFF" d="M451.2,75.8c0,8.5-7.1,15.3-15.9,15.3l0,0c-8.8,0-15.9-6.9-15.9-15.3c0,0,0,0,0,0c0-8.5,7.1-15.3,15.9-15.3
+		l0,0C444.1,60.5,451.2,67.4,451.2,75.8C451.2,75.8,451.2,75.8,451.2,75.8z"/>
+	<path fill="#FFFFFF" d="M226.5,85.9c0,9.5-8,17.3-17.9,17.3s-17.9-7.7-17.9-17.3c0,0,0,0,0,0c0-9.5,8-17.3,17.9-17.3l0,0
+		C218.5,68.7,226.5,76.4,226.5,85.9C226.5,85.9,226.5,85.9,226.5,85.9z"/>
+	<g transform="matrix(3.5343 -.65144 .63531 3.4468 81.218 66.367)">
+		<path fill-rule="evenodd" fill="#FFFFFF" d="M8.9,0.9c2.6,0,3.1,8.7,4.4,9.8S23.4,9.8,23.9,12c0.4,2.2-6.9,5.7-7.6,7.5
+			s3.4,9.1,1.9,10.4c-1.5,1.3-7.4-5.1-9.3-5.1s-7.6,6-9.1,4.9c-1.5-1.1,2.3-8.7,1.8-10.3s-8.1-5.2-7.6-7.4s9,0,10.4-1.1
+			C5.7,9.8,6.7,1,8.9,0.9"/>
+	</g>
+	<g transform="matrix(3.6337 .65145 -.63531 3.5437 365.21 97.464)">
+		<path fill-rule="evenodd" fill="#FFFFFF" d="M8.9,0.9c2.6,0,3.1,8.7,4.4,9.8S23.4,9.8,23.9,12c0.4,2.2-6.9,5.7-7.6,7.5
+			s3.4,9.1,1.9,10.4c-1.5,1.3-7.4-5.1-9.3-5.1s-7.6,6-9.1,4.9c-1.5-1.1,2.3-8.7,1.8-10.3s-8.1-5.2-7.6-7.4s9,0,10.4-1.1
+			C5.7,9.8,6.7,1,8.9,0.9"/>
+	</g>
+	<path fill="#FFFFFF" d="M333.8,95c0,14.7-12.3,26.5-27.5,26.5l0,0c-15.2,0-27.5-11.9-27.5-26.5s12.3-26.5,27.5-26.5
+		C321.5,68.4,333.8,80.3,333.8,95C333.8,95,333.8,95,333.8,95z"/>
+</g>
+<circle fill="#FF0000" cx="354.4" cy="244.3" r="26.7"/>
+<rect x="327.8" y="244.3" fill="#FF0000" width="53.3" height="225.1"/>
+<circle fill="#31FFA1" cx="204.7" cy="303.7" r="26.7"/>
+<rect x="178" y="303.7" fill="#31FFA1" width="53.3" height="165.8"/>
+<circle fill="#005ADD" cx="127.7" cy="275.7" r="26.7"/>
+<rect x="101" y="275.7" fill="#005ADD" width="53.3" height="200.3"/>
+<path id="Border" fill="none" stroke="#000000" stroke-width="24" stroke-linecap="square" d="M36,36h440v440H36V36z"/>
+</svg>
