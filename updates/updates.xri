@@ -15,6 +15,7 @@
          </title>
          <remove>
             ApplySTF.js,
+            ContinuumSubtract.js,
             PhotometricContinuumSubtraction.js
          </remove>
          <description>
