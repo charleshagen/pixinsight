@@ -2,7 +2,7 @@
 <xri version="1.0">
   <description>
      <p>
-        Repository for utilities and scripts by Charles Hagen.
+        Repository for nightphotons utilities and scripts by Charles Hagen.
      </p>
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
@@ -11,19 +11,23 @@
                type="script"
                releaseDate="20241012">
          <title>
-            NightPhotons processing suite 2024-10-01
+            NightPhotons processing suite 2024-10-12
          </title>
          <remove/>
          <description>
-            <h3>ApplySTF: Release 1.2.1:</h3>
-            <p>- Add feature icon</p>
-            <p>- Add window title</p>
-            <p></p>
-            <h3>PhotometricContinuumSubtraction: Release 1.1.0:</h3>
-            <p>- Implement astrometric solution transfer from input images</p>
-            <p>- Add feature icon</p>
-            <p>- Add window title</p>
-            <p>- Fix typo</p>
+         <h3>ApplySTF: Release 1.2.1</h3>
+         <ul>
+            <li>Add feature icon</li>
+            <li>Add window title</li>
+         </ul>
+
+         <h3>PhotometricContinuumSubtraction: Release 1.1.0</h3>
+         <ul>
+            <li>Implement astrometric solution transfer from input images</li>
+            <li>Add feature icon</li>
+            <li>Add window title</li>
+            <li>Fix typo</li>
+         </ul>
          </description>
       </package>
    </platform>
