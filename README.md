@@ -12,7 +12,7 @@ A repository of scripts and utilites to improve and expand upon the pixinsight p
 - Apply changes and restart Pixinsight
 
 ## Developer Update Procedure: ##
-1. zip src directory
+1. zip ``src`` and ``rsc`` directory
    - ``updates/nightphotons-YYYY-MM-DD.zip``
 2. update.xri
    - Change file name to new .zip

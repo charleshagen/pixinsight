@@ -6,19 +6,24 @@
      </p>
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
-      <package fileName="nightphotons-2024-10-01.zip"
-               sha1="3e000ce54db332f518deed95fce07137b09a9107"
+      <package fileName="nightphotons-2024-10-12.zip"
+               sha1="5bb3d10cfb4808403b345aca41621620b4574597"
                type="script"
-               releaseDate="20241001">
+               releaseDate="20241012">
          <title>
             NightPhotons processing suite 2024-10-01
          </title>
          <remove/>
          <description>
-            <p>
-               ApplySTF: Release 1.2.0
-               PhotometricContinuumSubtraction: Fix error output bug
-            </p>
+            <h3>ApplySTF: Release 1.2.1:</h3>
+            <p>- Add feature icon</p>
+            <p>- Add window title</p>
+            <p></p>
+            <h3>PhotometricContinuumSubtraction: Release 1.1.0:</h3>
+            <p>- Implement astrometric solution transfer from input images</p>
+            <p>- Add feature icon</p>
+            <p>- Add window title</p>
+            <p>- Fix typo</p>
          </description>
       </package>
    </platform>
