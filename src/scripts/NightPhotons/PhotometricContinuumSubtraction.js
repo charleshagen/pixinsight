@@ -7,9 +7,10 @@
 #include <pjsr/StdIcon.jsh>
 #include <pjsr/Sizer.jsh>
 #include <pjsr/NumericControl.jsh>
+#include <pjsr/ProcessExitStatus.jsh>
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.1.0"
+#define VERSION "1.2.0"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -17,24 +18,37 @@ var ToolParameters = {
     nbStarlessView: undefined,
     bbStarlessView: undefined,
     starlessEnabled: false,
-    maxStars: 200,
-    maxFlux: 2.0,
+    starRemovalMethod: 1,
+    maxStars: 400,
+    maxPeak: 0.8,
+    generatePlot: true,
     save: function () {
         if (ToolParameters.nbStarView != undefined && !ToolParameters.nbStarView.isNull) {
             Parameters.set("NarrowbandStarViewID", ToolParameters.nbStarView.id);
+        } else {
+            Parameters.remove("NarrowbandStarViewID");
         }
         if (ToolParameters.bbStarView != undefined && !ToolParameters.bbStarView.isNull) {
             Parameters.set("BroadbandStarViewID", ToolParameters.bbStarView.id);
+        } else {
+            Parameters.remove("BroadbandStarViewID");
         }
         if (ToolParameters.nbStarlessView != undefined && !ToolParameters.nbStarlessView.isNull) {
             Parameters.set("NarrowbandStarlessViewID", ToolParameters.nbStarlessView.id);
+        } else {
+            Parameters.remove("NarrowbandStarlessViewID");
         }
+
         if (ToolParameters.bbStarlessView != undefined && !ToolParameters.bbStarlessView.isNull) {
             Parameters.set("BroadbandStarlessViewID", ToolParameters.bbStarlessView.id);
+        } else {
+            Parameters.remove("BroadbandStarlessViewID");
         }
         Parameters.set("StarlessEnabled", ToolParameters.starlessEnabled);
+        Parameters.set("StarRemovalMethod", ToolParameters.starRemovalMethod);
         Parameters.set("MaximumStars", ToolParameters.maxStars);
-        Parameters.set("MaximumFlux", ToolParameters.maxFlux);
+        Parameters.set("MaximumPeak", ToolParameters.maxPeak);
+        Parameters.set("GeneratePlot", ToolParameters.generatePlot);
     },
     load: function () {
         if (Parameters.has("NarrowbandStarViewID")) {
@@ -68,55 +82,83 @@ var ToolParameters = {
         if (Parameters.has("StarlessEnabled")) {
             ToolParameters.starlessEnabled = Parameters.getBoolean("StarlessEnabled");
         }
+        if (Parameters.has("StarRemovalMethod")) {
+            ToolParameters.starRemovalMethod = Parameters.getInteger("StarRemovalMethod");
+        }
         if (Parameters.has("MaximumStars")) {
             ToolParameters.maxStars = Parameters.getInteger("MaximumStars");
         }
-        if (Parameters.has("MaximumFlux")) {
-            ToolParameters.maxFlux = Parameters.getReal("MaximumFlux");
+        if (Parameters.has("MaximumPeak")) {
+            ToolParameters.maxPeak = Parameters.getReal("MaximumPeak");
+        }
+        if (Parameters.has("GeneratePlot")) {
+            ToolParameters.generatePlot = Parameters.getBoolean("GeneratePlot");
         }
     }
 };
 
-function ContinuumSubtract() {
-    // Detect the stars in the broadband image
-    // Need to use the brighter of the images so we can reject the clipped
-    // stars / stars above the flux threshold
-
-
+function continuumSubtract() {
     // Error condition checking
     let generateStarless = ToolParameters.starlessEnabled;
+    let closeStarlessBB = false;
+    let closeStarlessNB = false;
+
     with (ToolParameters) {
         if (nbStarView == undefined || bbStarView == undefined) {
             console.criticalln("Error: One or both of the Star-containing images are undefined. Please select a view!");
+            console.show();
             return;
         }
         if (!ToolParameters.nbStarView.image.isGrayscale) {
             console.criticalln("Invalid colorspace for image: " + ToolParameters.nbStarView.id + ". Must be grayscale.");
+            console.show();
             return;
         }
         if (!ToolParameters.bbStarView.image.isGrayscale) {
             console.criticalln("Invalid colorspace for image: " + ToolParameters.bbStarView.id + ". Must be grayscale.");
+            console.show();
             return;
         }
         // See if starless is enabled
         if (starlessEnabled) {
             // If enabled and one or both of the starless images are undefined, warn but continue
-            if (nbStarlessView == undefined || bbStarlessView == undefined) {
-                generateStarless = false;
+            if (generateStarless && nbStarlessView == undefined) {
+                if (ToolParameters.starRemovalMethod != 0) {
+                    ToolParameters.nbStarlessView = cloneView(ToolParameters.nbStarView, generateValidID(ToolParameters.nbStarView.id + "_starless")); 
+                    if (!removeStars(ToolParameters.nbStarlessView)) {
+                        generateStarless = false;
+                    }
+                    closeStarlessNB = true;
+                } else {
+                    generateStarless = false;
+                }
+            }
+            if (generateStarless && bbStarlessView == undefined) {
+                if (ToolParameters.starRemovalMethod != 0) {
+                    ToolParameters.bbStarlessView = cloneView(ToolParameters.bbStarView, generateValidID(ToolParameters.bbStarView.id + "_starless")); 
+                    if (!removeStars(ToolParameters.bbStarlessView)) {
+                        generateStarless = false;
+                    }
+                    closeStarlessBB = true;
+                } else {
+                    generateStarless = false;
+                }
             }
             if (generateStarless) {
                 if (!ToolParameters.nbStarlessView.image.isGrayscale) {
-                    console.criticalln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
+                    console.warningln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
+                    console.show();
                     generateStarless = false;
                 }
                 if (!ToolParameters.bbStarlessView.image.isGrayscale) {
-                    console.criticalln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
+                    console.warningln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
+                    console.show();
                     generateStarless = false;
                 }
             }
 
             if (!generateStarless) {
-                console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image!");
+                console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image! Define starless images or enable StarXterminator as a fallback.");
             }
         }
     }
@@ -125,11 +167,16 @@ function ContinuumSubtract() {
     let narrowbandImage = ToolParameters.nbStarView.image;
 
     // Star detection
-    let stars = DetectStars(broadbandImage);
+    let stars = detectStars(broadbandImage);
+   if (stars.length == 0) {
+        console.criticalln("Error: No stars detected. Try adjusting the maximum star peak parameter.");
+        console.show();
+        return;
+    }
 
     // PSF generation
-    let broadbandPSF = GeneratePSFs(ToolParameters.bbStarView, stars);
-    let narrowbandPSF = GeneratePSFs(ToolParameters.nbStarView, stars);
+    let broadbandPSF = generatePSFs(ToolParameters.bbStarView, stars);
+    let narrowbandPSF = generatePSFs(ToolParameters.nbStarView, stars);
 
     // Correlation
     let starFluxes = [];
@@ -146,40 +193,127 @@ function ContinuumSubtract() {
         starFluxes[narrowbandPSF[i][0]][1] = narrowbandPSF[i][16];
     }
 
+    // Plot file output initialization 
+    var tmpDir = File.systemTempDirectory;
+    var dataFilepath = tmpDir + "/data.dat";
+    var trendFilepath = tmpDir + "/trendline.dat";
+    var gnuFilepath = tmpDir + "/fluxes.gnu";
+    var svgFilepath = tmpDir + "/PCS_plot.svg";
+
+    var xList = [];
+    var yList = [];
+
+    // Write and push ratio data
+    var f = new File;
+    f.createForWriting( dataFilepath );
     for (let i = 0; i < stars.length; ++i) {
-        if (starFluxes[i].length == 2) {
-            ratioList.push(starFluxes[i][0] / starFluxes[i][1]);
+      if (starFluxes[i].length == 2 && starFluxes[i][0] != null && starFluxes[i][1] != null) {
+        const x = starFluxes[i][0];
+        const y = starFluxes[i][1];
+    
+        xList.push(x);
+        yList.push(y);
+
+        ratioList.push(starFluxes[i][0] / starFluxes[i][1]);
+        
+        if (ToolParameters.generatePlot) {
+            f.outTextLn(format("%.4f %.4f", x, y));
         }
+
+        // Push to ratio list for calculation
+        ratioList.push(x / y);
+      }
     }
+    f.close();
+
 
     // Error checking
     if (ratioList.length == 0) {
         console.criticalln("Error: No valid star pairs detected, cannot generate subtracted image.");
+        console.show();
         return;
     }
 
     if (ratioList.length < 50) {
         console.warningln("Warning: Only " + ratioList.length + " valid star pairs detected, results may be inaccurate.");
+        console.show();
     }
 
     // Ratio Calculation
     let ratio = median(ratioList);
 
-    // Resulting Image Generation
+    // Star-Containing Subtracted Image
     let starID = generateValidID(ToolParameters.nbStarView.id + "_sub")
-    SubtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, starID);
-    ApplyAstrometricSolution(starID);
-    
+    subtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, starID);
+    applyAstrometricSolution(starID);
+
+    // Starless Subtracted Image
     if (generateStarless) {
         let starlessID = generateValidID(ToolParameters.nbStarlessView.id + "_sub")
-        SubtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, starlessID);
-        ApplyAstrometricSolution(starlessID);
+        subtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, starlessID);
+        applyAstrometricSolution(starlessID);
+    }
+
+    // Clean up starless images if generated
+    if (closeStarlessBB) { 
+        console.writeln("Cleaning up broadband starless");
+        ToolParameters.bbStarlessView.window.forceClose(); 
+    }
+
+    if (closeStarlessNB) { 
+        console.writeln("Cleaning up narrowband starless");
+        ToolParameters.nbStarlessView.window.forceClose(); 
+    }
+
+    // Generate the plot
+    if (ToolParameters.generatePlot) {
+        var xQuartiles = quartiles(xList);
+        var yQuartiles = quartiles(yList);
+
+        // Set plot limits
+        var minX = xQuartiles[1] * 0.5 // Q1
+        var maxX = xQuartiles[3] * 2.0 // Q3
+        var minY = yQuartiles[1] * 0.5 // Q1
+        var maxY = yQuartiles[3] * 2.0 // Q3
+
+        // Write trendline data file
+        var f = new File;
+        f.createForWriting( trendFilepath );
+        f.outTextLn("0 0");
+        if (maxX/ratio < maxY) {
+            f.outTextLn(format( "%.4f %.4f", 0.99*maxX, 0.99*maxX/ratio));
+        } else {
+            f.outTextLn(format( "%.4f %.4f", 0.99*maxY*ratio, 0.99*maxY));
+        }
+        f.close();
+
+        // Write gnuplot file
+        var f = new File;
+        f.createForWriting( gnuFilepath );
+        f.outTextLn( "set terminal svg size 600,600 enhanced font 'helvetica,12' background rgb 'white'" );
+        f.outTextLn( "set title 'Broadband vs. Narrowband Flux' font 'helvetica,16'" );
+        f.outTextLn( "set grid" );
+        f.outTextLn( "set xlabel \"Broadband Flux\"" );
+        f.outTextLn( "set ylabel \"Narrowband Flux\"" );
+        f.outTextLn( "set xrange [" + minX.toFixed(3) + ":" + maxX.toFixed(3) + "]" );
+        f.outTextLn( "set yrange [" + minY.toFixed(3) + ":" + maxY.toFixed(3) + "]" );
+        f.outTextLn( "set output '" + svgFilepath + "'" );
+        f.outTextLn( "plot '" + dataFilepath + "' with points lc rgbcolor '#E00000' title \"Fluxes\", \\" );
+        f.outTextLn( "'" + trendFilepath + "' with lines lc rgbcolor '#0000E0' title \"Trendline\"" );
+
+        f.close();
+
+        // Run gnuplot to generate plot
+        run( "\"" + getEnvironmentVariable( "PXI_BINDIR" ) + "/gnuplot\" \"" + gnuFilepath + "\"" );
+
+        // Load the image
+        ImageWindow.open( svgFilepath )[0].show();
     }
 }
 
-function DetectStars(sourceImage) {
+function detectStars(sourceImage) {
     let detector = new StarDetector;
-    let fluxLimit = ToolParameters.maxFlux;
+    detector.upperLimit = ToolParameters.maxPeak;
     let maxBrightStars = ToolParameters.maxStars;
 
     // Console Detector Progress
@@ -208,14 +342,10 @@ function DetectStars(sourceImage) {
     let stars = []
     let radius = 2;
 
-    // Set up the stars array for DynamicPSF: Take the n brightest stars that are lower than the max
     let numStars = Math.min(S.length, maxBrightStars);
+    // Set up the stars array for DynamicPSF: Take the n brightest stars that are lower than the max
+    console.writeln("Stars detected: " + S.length);
     for (let i = 0; i < numStars; ++i) {
-        numStars = Math.min(S.length, maxBrightStars);
-        if (S[i].flux > fluxLimit) {
-            ++maxBrightStars;
-            continue;
-        }
         stars.push([
             0, 0, DynamicPSF.prototype.Star_DetectedOk, S[i].pos.x - radius,
             S[i].pos.y - radius,
@@ -226,7 +356,7 @@ function DetectStars(sourceImage) {
     return stars;
 }
 
-function GeneratePSFs(sourceImage, starsList) {
+function generatePSFs(sourceImage, starsList) {
     let P = new DynamicPSF;
     with (P) {
         views = [[sourceImage.id]];
@@ -266,7 +396,7 @@ function generateValidID(id) {
     return newID;
 }
 
-function ApplyAstrometricSolution(id) {
+function applyAstrometricSolution(id) {
     // Prefer narrowband astrometric solution if available, default to broadband otherwise
     if (ToolParameters.nbStarView.window.hasAstrometricSolution) {
         View.viewById(id).window.copyAstrometricSolution(ToolParameters.nbStarView.window);
@@ -277,7 +407,7 @@ function ApplyAstrometricSolution(id) {
     }
 }
 
-function SubtractImage(img1, img2, scaleFactor, id) {
+function subtractImage(img1, img2, scaleFactor, id) {
     let P = new PixelMath;
     P.expression = img1.id + "-("+img2.id+"-med("+img2.id+"))/"+scaleFactor;
     with (P) {
@@ -309,11 +439,110 @@ function median(arr) {
     }
 }
 
+function quartiles(arr) {
+    if (arr.length === 0) {
+        return null; // Handle empty array case
+    }
+    arr.sort((a, b) => a - b);
+    const q1Index = Math.floor(arr.length / 4);
+    const q2Index = Math.floor(arr.length / 2);
+    const q3Index = Math.ceil(arr.length * 3 / 4);
+
+    const min = arr[0];
+    const Q1 = arr.length % 2 === 0 ? (arr[q1Index - 1] + arr[q1Index]) / 2 : arr[q1Index];
+    const Q2 = arr.length % 2 === 0 ? (arr[q2Index - 1] + arr[q2Index]) / 2 : arr[q2Index];
+    const Q3 = arr.length % 2 === 0 ? (arr[q3Index - 1] + arr[q3Index]) / 2 : arr[q3Index];
+    const max = arr[arr.length - 1];
+
+    return [min, Q1, Q2, Q3, max];
+}
+
+function removeStars(view) {
+    switch (ToolParameters.starRemovalMethod) {
+        case 1:
+            try {
+                let P = new StarXTerminator;
+                P.stars = false;
+                P.unscreen = false;
+                P.overlap = 0.20;
+            
+                P.executeOn(view)
+                return true;
+            } catch (e) {
+                console.criticalln("Could not remove stars from Image. Ensure that StarXTerminator is installed")
+                console.criticalln(e)
+                console.show();
+                return false;
+            }
+        case 2:
+            try {
+                var P = new StarNet2;
+                P.stride = StarNet2.prototype.defStride;
+                P.mask = false;
+                P.linear = true;
+                P.upsample = false;
+                P.shadows_clipping = -2.80;
+                P.target_background = 0.25;
+            
+                P.executeOn(view)
+                return true;
+            } catch (e) {
+                console.criticalln("Could not remove stars from Image. Ensure that StarXTerminator is installed")
+                console.criticalln(e)
+                console.show();
+                return false;
+            }
+        default:
+            return false;
+    }
+
+}
+
+function cloneView(view, newId) {
+    try {
+        let newWindow = new ImageWindow(1, 1, 1, view.window.bitsPerSample, view.window.isFloatSample, view.image.isColor, newId);
+        newWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+        newWindow.mainView.image.assign(view.image);
+        newWindow.mainView.endProcess();
+        newWindow.mainView.stf = view.stf;
+        return newWindow.mainView;
+    } catch (e) {
+        console.criticalln(e)
+    };
+    return null;
+};
+
+function run( program, maxRunningTimeSec )
+{
+   if ( maxRunningTimeSec === undefined )
+      maxRunningTimeSec = 10;
+   var P = new ExternalProcess( program );
+   if ( P.waitForStarted() )
+   {
+      processEvents();
+      var n = 0;
+      var nmax = Math.round( maxRunningTimeSec*1000/250 );
+      for ( ; n < nmax && !P.waitForFinished( 250 ); ++n )
+      {
+         console.write( "<end>\b" + "-/|\\".charAt( n%4 ) );
+         processEvents();
+      }
+      if ( n > 0 )
+         console.writeln( "<end>\b" );
+   }
+   if ( P.exitStatus == ProcessExitStatus_Crash || P.exitCode != 0 )
+   {
+      var e = P.stderr;
+      throw new ParseError( "Process failed:\n" + program +
+                            ((e.length > 0) ? "\n" + e : ""), tokens, index );
+   }
+}
+
 function MainDialog() {
     this.__base__ = Dialog;
     this.__base__();
     var self = this;
-    
+
     // Window parameters
     this.windowTitle = TITLE;
     var panelWidth = this.font.width("<b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen");
@@ -338,8 +567,9 @@ function MainDialog() {
         //     + "<i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i>";
         text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p>"
             + "<p>Provide grayscale narrowband and broadband star-containing linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
-            + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images. For images with "
-            + "severe aberrations, it may be beneficial to run BlurX in correct only mode before using PCS.</p>"
+            + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images or enable a fallback star removal "
+            + "method to allow PCS to generate the intermediate starless images automatically. For images with severe stellar aberrations, it may be beneficial to run BlurX "
+            + "in correct only mode before using PCS.</p>"
             + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
     }
 
@@ -446,6 +676,37 @@ function MainDialog() {
     // Starless Images
     // --------------------------------------------------------------
 
+    this.starXComboBox = new ComboBox(this);
+    with (this.starXComboBox) {
+        toolTip = "<p>If views are not provided, StarXTerminator (if present in your pixinsight installation) will be used to Generate starless images for the PCS routine.</p>";
+        addItem("<None>");
+        addItem("StarXTerminator");
+        addItem("StarNet V2");
+        currentItem = ToolParameters.starRemovalMethod;
+        maxWidth = this.font.width("StarXTerminator") + 40;
+        width = this.font.width("StarXTerminator") + 40;
+        onItemSelected = function (indx) {
+            ToolParameters.starRemovalMethod = indx;
+        }
+    }
+
+    this.starXLabel = new Label(this);
+    with (this.starXLabel) {
+        text = "Fallback:";
+        minWidth = labelWidth1;
+        maxWidth = labelWidth1;
+        textAlignment = TextAlign_Right | TextAlign_VertCenter;
+    }
+
+    this.starXSizer = new HorizontalSizer(this);
+    with (this.starXSizer) {
+        margin = 6;
+        add(this.starXLabel);
+        addSpacing(5);
+        add(this.starXComboBox);
+        addStretch()
+    }
+
     // Narrowband View Selector
     this.nbStarlessLabel = new Label(this);
     with (this.nbStarlessLabel) {
@@ -535,14 +796,15 @@ function MainDialog() {
         titleCheckBox = true;
         checked = ToolParameters.starlessEnabled;
         onCheck = function () {
-            ToolParameters.starlessEnabled = !ToolParameters.starlessEnabled;
+            ToolParameters.starlessEnabled = checked;
         }
-        title = "Starless Views";
+        title = "Generate Starless";
         sizer = new VerticalSizer;
     }
     with (this.starlessGroup.sizer) {
         add(this.nbStarlessSizer);
         add(this.bbStarlessSizer);
+        add(this.starXSizer);
     }
 
     // --------------------------------------------------------------
@@ -561,7 +823,7 @@ function MainDialog() {
     with (this.maxStars) {
         toolTip = "<p> This field controls the maximum number of stars that will be included in the calculation, "+
         "higher values will include more stars which will take longer, but may provide more accurate results."+
-        "<p>Default value is 200 stars</p>"
+        "<p>Default value is 400 stars</p>"
         setPrecision(2);
         setRange(50, 1000);
         setReal(true);
@@ -580,36 +842,65 @@ function MainDialog() {
         add(this.maxStars, 0);
     }
 
-    this.maxFluxLabel = new Label(this);
-    with (this.maxFluxLabel) {
-        text = "Maximum Flux: ";
+    this.maxPeakLabel = new Label(this);
+    with (this.maxPeakLabel) {
+        text = "Maximum Peak: ";
         minWidth = labelWidth2;
         maxWidth = labelWidth2;
         textAlignment = TextAlign_Right | TextAlign_VertCenter;
     }
 
-    this.maxFlux = new NumericControl(this);
-    with (this.maxFlux) {
-        toolTip = "<p> This field controls the maximum flux that a star can have to be included in the flux calculation, "+
+    this.maxPeak = new NumericControl(this);
+    with (this.maxPeak) {
+        toolTip = "<p> This field controls the maximum peak value that a star can have to be included in the flux calculation, "+
         "higher values will be more tollerant of brighter stars and may begin to include saturated stars, which can degrade "+
         "the performance of the routine.</p>" +
-        "<p>Default value is 2</p>"
+        "<p>Default value is 0.8</p>"
         setPrecision(2);
-        setRange(0.8, 5);
+        setRange(0, 1);
         setReal(true);
         slider.stepSize = 0.1;
-        slider.setRange(0, 42);
-        setValue(ToolParameters.maxFlux);
+        slider.setRange(0, 10);
+        setValue(ToolParameters.maxPeak);
         onValueUpdated = function (value) {
-            ToolParameters.maxFlux = value;
+            ToolParameters.maxPeak = value;
         }
     }
 
-    this.maxFluxSizer = new HorizontalSizer(this);
-    with (this.maxFluxSizer) {
+    this.maxPeakSizer = new HorizontalSizer(this);
+    with (this.maxPeakSizer) {
         margin = 6;
-        add(this.maxFluxLabel, 1);
-        add(this.maxFlux, 0);
+        add(this.maxPeakLabel, 1);
+        add(this.maxPeak, 0);
+    }
+
+    this.generatePlotLabel = new Label(this);
+    with (this.generatePlotLabel) {
+        toolTip = "<p>Plot narrowband flux vs. broadband flux. This can be useful for verifying the calculated fit and troubleshooting in the "+
+        "event of poor subtraction. If the curve is non-linear, consider increasing the maximum number of stars.</p>";
+        text = "Generate Plot: ";
+        minWidth = labelWidth2;
+        maxWidth = labelWidth2;
+        textAlignment = TextAlign_Right | TextAlign_VertCenter;
+    }
+
+    this.generatePlotCheckBox = new CheckBox(this);
+    with (this.generatePlotCheckBox) {
+        toolTip = "<p>Plot narrowband flux vs. broadband flux. This can be useful for verifying the calculated fit and troubleshooting in the "+
+        "event of poor subtraction. If the curve is non-linear, consider increasing the maximum number of stars.</p>";
+        checked = ToolParameters.generatePlot
+        // text = "Generate Plot";
+        onCheck = function () {
+            ToolParameters.generatePlot = checked;
+        }
+    }
+
+    this.generatePlotSizer = new HorizontalSizer(this);
+    with (this.generatePlotSizer) {
+        margin = 6;
+        add(this.generatePlotLabel, 1);
+        addSpacing(10);
+        add(this.generatePlotCheckBox, 0);
     }
 
     // Group Sizer
@@ -620,7 +911,8 @@ function MainDialog() {
     }
     with (this.settingsGroup.sizer) {
         add(this.maxStarsSizer);
-        add(this.maxFluxSizer);
+        add(this.maxPeakSizer);
+        add(this.generatePlotSizer);
     }
 
 
@@ -709,7 +1001,7 @@ function main() {
     }
 
     if (retVal == 1) {
-        ContinuumSubtract();
+        continuumSubtract();
     }
 }
 

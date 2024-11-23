@@ -6,12 +6,12 @@
      </p>
   </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.1">
-      <package fileName="nightphotons-2024-10-12.zip"
-               sha1="5bb3d10cfb4808403b345aca41621620b4574597"
+      <package fileName="nightphotons-2024-11-23.zip"
+               sha1="4a3f9c9ef813db9b99b622cadb66277cc0829684"
                type="script"
-               releaseDate="20241012">
+               releaseDate="20241123">
          <title>
-            NightPhotons processing suite 2024-10-12
+            NightPhotons processing suite 2024-11-23
          </title>
          <remove>
             src/scripts/ApplySTF.js,
@@ -19,18 +19,11 @@
             src/scripts/PhotometricContinuumSubtraction.js
          </remove>
          <description>
-         <h3>ApplySTF: Release 1.2.1</h3>
+         <h3>PhotometricContinuumSubtraction: Release 1.2.0</h3>
          <ul>
-            <li>Add feature icon</li>
-            <li>Add window title</li>
-         </ul>
-
-         <h3>PhotometricContinuumSubtraction: Release 1.1.0</h3>
-         <ul>
-            <li>Implement astrometric solution transfer from input images</li>
-            <li>Add feature icon</li>
-            <li>Add window title</li>
-            <li>Fix typo</li>
+            <li>Change initial star rejection parameter to peak value from max flux</li>
+            <li>Implement star removal using StarNet v2 and StarXterminator</li>
+            <li>Add optional flux best fit plotting</li>
          </ul>
          </description>
       </package>
