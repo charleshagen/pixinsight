@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xri version="1.0">
-  <description>
-     <p>
-        Repository for nightphotons utilities and scripts by Charles Hagen.
+   <description>
+      <p>
+        Repository for NightPhotons utilities and scripts by Charles Hagen.
      </p>
-  </description>
-   <platform os="all" arch="noarch" version="1.8.9-1:1.9.4">
-      <package fileName="nightphotons-2024-12-31.zip"
-               sha1="----"
-               type="script"
-               releaseDate="20241231">
+   </description>
+   <platform os="all" arch="noarch" version="1.8.9-1:1.9.2">
+      <package fileName="nightphotons-2024-12-31.zip" sha1="488586b818a063fd5c7c411af81426300e06f976" type="script" releaseDate="20241231">
          <title>
             NightPhotons processing suite 2024-12-31
          </title>
          <description>
-         <h3>RenameImages: Initial Release 1.0.0</h3>
-         <ul>
-            <li>Rename and close images according to regular expressions</li>
-            <li>Scans all open views and applies the relevant event to any matching expressions</li>
-         </ul>
-         <h3>PhotometricContinuumSubtraction: Release 1.2.1</h3>
-            <li>Fix Typo</li>
+            <h3>RenameImages: Initial Release 1.0.0</h3>
+            <ul>
+               <li>Rename and close images according to regular expressions</li>
+               <li>Scans all open views and applies the relevant event to any matching expressions</li>
+            </ul>
+            <h3>PhotometricContinuumSubtraction: Release 1.2.1</h3>
+            <ul>
+               <li>Fix Typo</li>
+            </ul>
          </description>
       </package>
    </platform>
 </xri>
+<Signature developerId="CharlesHagen" timestamp="2025-01-01T05:24:54.685Z" encoding="Base64">PHTMpgKDfRRmvzIfziPPrK+FoksvzrfRrKIcasQBAGNkQybCho16YNHxOpRXiBRDtIo8FkjpY7nnsTR3jN+IBw==</Signature>

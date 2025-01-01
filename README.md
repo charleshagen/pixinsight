@@ -4,6 +4,7 @@ A repository of scripts and utilites to improve and expand upon the pixinsight p
 ## Scripts List ##
 1. **ApplySTF** | ``NightPhotons > ApplySTF``
 2. **PhotometricContinuumSubtraction** | ``NightPhotons > PhotometricContinuumSubtraction``
+2. **RenameImages** | ``NightPhotons > RenameImages``
 
 ## Installation ##
 `https://raw.githubusercontent.com/charleshagen/pixinsight/main/updates/`
