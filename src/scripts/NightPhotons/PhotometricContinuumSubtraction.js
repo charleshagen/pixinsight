@@ -10,7 +10,7 @@
 #include <pjsr/ProcessExitStatus.jsh>
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.2.0"
+#define VERSION "1.2.1"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -158,7 +158,7 @@ function continuumSubtract() {
             }
 
             if (!generateStarless) {
-                console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image! Define starless images or enable a star removal fallback.");
+                console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image! Define starless images or enable StarXterminator as a fallback.");
             }
         }
     }
@@ -487,7 +487,7 @@ function removeStars(view) {
                 P.executeOn(view)
                 return true;
             } catch (e) {
-                console.criticalln("Could not remove stars from Image. Ensure that StarNet is installed")
+                console.criticalln("Could not remove stars from Image. Ensure that StarXTerminator is installed")
                 console.criticalln(e)
                 console.show();
                 return false;
