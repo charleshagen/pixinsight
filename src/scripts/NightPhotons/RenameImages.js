@@ -6,20 +6,22 @@
 
 #feature-id    RenameImages : NightPhotons > RenameImages
 #feature-icon  @script_icons_dir/RenameImages.svg
-#feature-info  Automatically renames standard output filenames to the selection(s) from a regular expression
+#feature-info  Automatically closes or renames images according to the output of a pattern and regular expression
 
 #define TITLE "RenameImages"
-#define VERSION "1.0.0"
+#define VERSION "1.1.0"
 
 var ToolParameters = {
-   renameString: ".*filter[-_]([a-zA-Z0-9]*).*(?:integration|drizzle).*",
+   renameString: ".*filter_([a-zA-Z0-9]*).*integration|drizzle.*",
+   renamePatternString: "{1}",
    renameEnabled: true,
    renameCaseInsensitive: true,
-   closeString: ".*(?:rejection|slope|weightimage).*",
+   closeString: ".*rejection|slope|weightimage.*",
    closeEnabled: true,
    closeCaseInsensitive: true,
    save: function () {
       Parameters.set("RenameString", ToolParameters.renameString); 
+      Parameters.set("RenamePatternString", ToolParameters.renamePatternString); 
       Parameters.set("RenameEnabled", ToolParameters.renameEnabled); 
       Parameters.set("RenameCaseInsensitive", ToolParameters.renameCaseInsensitive); 
       Parameters.set("CloseString", ToolParameters.closeString); 
@@ -29,6 +31,9 @@ var ToolParameters = {
    load: function () { 
       if (Parameters.has("RenameString")) {
          ToolParameters.renameString = Parameters.getString("RenameString");
+      } 
+      if (Parameters.has("RenamePatternString")) {
+         ToolParameters.renamePatternString = Parameters.getString("RenamePatternString");
       } 
       if (Parameters.has("RenameEnabled")) {
          ToolParameters.renameEnabled = Parameters.getBoolean("RenameEnabled");
@@ -56,7 +61,8 @@ function RenameImagesEngine() {
       const close = new RegExp(ToolParameters.closeString, ToolParameters.closeCaseInsensitive ? "i" : "");
 
       for (let i = 0; i < windows.length; i++) {
-         let view = windows[i].mainView;
+         let window = windows[i];
+         let view = window.mainView;
 
          const closeMatch = view.id.match(close);
          if (ToolParameters.closeEnabled && closeMatch) {
@@ -70,20 +76,69 @@ function RenameImagesEngine() {
                console.warningln("Cannot rename image. Regular expression matched with no group on view: " + view.id);
                continue;
             }
-            const groupContent = renameMatch.slice(1).join("_");
-            let id = this.generateValidID(groupContent);
+            // const groupContent = renameMatch.slice(1).join("_");
+
+            let content = ToolParameters.renamePatternString.replace(/\{(\d+)(\-[a-zA-Z])?\}/g, (_, i, f) => {
+               const index = parseInt(i);
+               const value = index >= 0 && index < renameMatch.length ? renameMatch[index].toString() : ''; 
+               if (value.length == 0) {
+                  console.warningln("No value for index " + index);
+                  return "";
+               }
+               switch(f) {
+                  case "-u":
+                     return value.toUpperCase();
+                  case "-l":
+                     return value.toLowerCase();
+                  case "-p":
+                     return value[0].toUpperCase() + (value.length > 1 ? value.slice(1).toLowerCase() : "");
+                  default:
+                     return value;
+               }
+            });
+
+            content = content.replace(/\$([a-zA-Z]+)(\-[a-zA-Z])?\$/g, (_, n, f) => {
+               const name = n.toUpperCase();
+               const keywords = window.keywords;
+               for (let j = 0; j < keywords.length; j++) {
+                  const fits = keywords[j];
+                  if (fits.name.toUpperCase() == name) {
+                     const value = fits.strippedValue;
+                     // console.criticalln("DEBUG FITS value: \"" + value + "\"");
+                     if (value.length == 0) {
+                        console.warningln("No value for index " + index);
+                        return "";
+                     }
+                     switch(f) {
+                        case "-u":
+                           return value.toUpperCase();
+                        case "-l":
+                           return value.toLowerCase();
+                        case "-p":
+                           return value[0].toUpperCase() + (value.length > 1 ? value.slice(1).toLowerCase() : "");
+                        default:
+                           return value;
+                     }
+                  }
+               }
+               console.warningln("Failed to find FITS Keyword \"" + name + "\"");
+               return "";
+            });
+            
+            let id = this.generateValidID(content);
             console.noteln("Renaming view \"" + view.id + "\" to \"" + id + "\"");
             view.id = id;
             // Deiconize the image and reiconize it to present the changed identifier if iconic
-            if (windows[i].iconic) {
-               windows[i].deiconize();
-               windows[i].iconize();
+            if (window.iconic) {
+               window.deiconize();
+               window.iconize();
             }
          } 
       }
    };
 
    this.generateValidID = function (id) {
+      id = id.replace(/[^\w]+/g,"_");
       if (id[0] >= '0' && id[0] <= '9') {
          id = "_" + id;
       }
@@ -107,7 +162,7 @@ function MainDialog() {
    this.__base__();
    var self = this;
 
-   var labelWidth = this.font.width("Regex: ");
+   var labelWidth = this.font.width("Pattern: ");
 
    // MAIN DIALOG BODY
 
@@ -140,6 +195,8 @@ function MainDialog() {
    this.renameRegex_Label = new Label(this);
    with (this.renameRegex_Label) {
       text = "Regex: "
+      minWidth = labelWidth;
+      maxWidth = labelWidth;
       textAlignment = TextAlign_Right|TextAlign_VertCenter;
    }
 
@@ -159,6 +216,31 @@ function MainDialog() {
       add(this.renameRegex_Edit);
    }
 
+   // Pattern
+   this.renamePattern_Label = new Label(this);
+   with (this.renamePattern_Label) {
+      text = "Pattern: "
+      minWidth = labelWidth;
+      maxWidth = labelWidth;
+      textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   }
+
+   this.renamePattern_Edit = new Edit(this);
+   with (this.renamePattern_Edit) {
+      margin = 4;
+      text = ToolParameters.renamePatternString;
+      onTextUpdated = function () {
+         ToolParameters.renamePatternString = text;
+      }
+   }
+
+   this.renamePattern_Sizer = new HorizontalSizer;
+   with (this.renamePattern_Sizer) {
+      margin = 6;
+      add(this.renamePattern_Label);
+      add(this.renamePattern_Edit);
+   }
+
    // Flags
    this.renameFlags_Label = new Label(this);
    with (this.renameFlags_Label) {
@@ -171,7 +253,7 @@ function MainDialog() {
    // Case Insensitive
    this.renameCaseInsensitive_CheckBox = new CheckBox(this);
    with (this.renameCaseInsensitive_CheckBox) {
-       toolTip = "<p>Use the case insensitive flag, \"i\"</p>";
+       toolTip = "<p>Use the regex case insensitive flag, \"i\"</p>";
        checked = ToolParameters.renameCaseInsensitive;
        text = "Case Insensitive";
        onCheck = function () {
@@ -203,6 +285,7 @@ function MainDialog() {
    with (this.renameGroup.sizer) {
       margin = 2;
       add(this.renameRegex_Sizer);
+      add(this.renamePattern_Sizer);
       add(this.renameFlags_Sizer);
    }
 
@@ -214,6 +297,8 @@ function MainDialog() {
    this.closeRegex_Label = new Label(this);
    with (this.closeRegex_Label) {
       text = "Regex: "
+      minWidth = labelWidth;
+      maxWidth = labelWidth;
       textAlignment = TextAlign_Right|TextAlign_VertCenter;
    }
 
@@ -245,7 +330,7 @@ function MainDialog() {
    // Case Insensitive
    this.closeCaseInsensitive_CheckBox = new CheckBox(this);
    with (this.closeCaseInsensitive_CheckBox) {
-       toolTip = "<p>Use the case insensitive flag, \"i\"</p>";
+       toolTip = "<p>Use the regex case insensitive flag, \"i\"</p>";
        checked = ToolParameters.closeCaseInsensitive;
        text = "Case Insensitive";
        onCheck = function () {
