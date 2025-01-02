@@ -6,9 +6,9 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.8.9-1:1.9.2">
-      <package fileName="nightphotons-2024-12-31.zip" sha1="488586b818a063fd5c7c411af81426300e06f976" type="script" releaseDate="20241231">
+      <package fileName="nightphotons-2025-01-01.zip" sha1="910750aa4d3483f2bff17db7245726ebffea10b2" type="script" releaseDate="20250101">
          <title>
-            NightPhotons processing suite 2024-12-31
+            NightPhotons processing suite 2025-01-01 (for versions below 1.9.0)
          </title>
          <description>
             <h3>RenameImages: Initial Release 1.0.0</h3>
