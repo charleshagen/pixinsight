@@ -13,37 +13,42 @@
 
 var ToolParameters = {
    renameString: ".*filter_([a-zA-Z0-9]*).*integration|drizzle.*",
-   renamePatternString: "{1}",
+   renamePatternString: "$FILTER$",
    renameEnabled: true,
    renameCaseInsensitive: true,
+   renameIconize: false,
    closeString: ".*rejection|slope|weightimage.*",
    closeEnabled: true,
    closeCaseInsensitive: true,
    save: function () {
-      Parameters.set("RenameString", ToolParameters.renameString); 
-      Parameters.set("RenamePatternString", ToolParameters.renamePatternString); 
-      Parameters.set("RenameEnabled", ToolParameters.renameEnabled); 
-      Parameters.set("RenameCaseInsensitive", ToolParameters.renameCaseInsensitive); 
-      Parameters.set("CloseString", ToolParameters.closeString); 
-      Parameters.set("CloseEnabled", ToolParameters.closeEnabled); 
-      Parameters.set("CloseCaseInsensitive", ToolParameters.closeCaseInsensitive); 
+      Parameters.set("RenameString", ToolParameters.renameString);
+      Parameters.set("RenamePatternString", ToolParameters.renamePatternString);
+      Parameters.set("RenameEnabled", ToolParameters.renameEnabled);
+      Parameters.set("RenameCaseInsensitive", ToolParameters.renameCaseInsensitive);
+      Parameters.set("RenameIconize", ToolParameters.renameIconize);
+      Parameters.set("CloseString", ToolParameters.closeString);
+      Parameters.set("CloseEnabled", ToolParameters.closeEnabled);
+      Parameters.set("CloseCaseInsensitive", ToolParameters.closeCaseInsensitive);
     },
-   load: function () { 
+   load: function () {
       if (Parameters.has("RenameString")) {
          ToolParameters.renameString = Parameters.getString("RenameString");
-      } 
+      }
       if (Parameters.has("RenamePatternString")) {
          ToolParameters.renamePatternString = Parameters.getString("RenamePatternString");
-      } 
+      }
       if (Parameters.has("RenameEnabled")) {
          ToolParameters.renameEnabled = Parameters.getBoolean("RenameEnabled");
-      } 
+      }
       if (Parameters.has("RenameCaseInsensitive")) {
          ToolParameters.renameCaseInsensitive = Parameters.getBoolean("RenameCaseInsensitive");
-      } 
+      }
+      if (Parameters.has("RenameIconize")) {
+         ToolParameters.renameIconize = Parameters.getBoolean("RenameIconize");
+      }
       if (Parameters.has("CloseString")) {
          ToolParameters.closeString = Parameters.getString("CloseString");
-      } 
+      }
       if (Parameters.has("CloseEnabled")) {
          ToolParameters.closeEnabled = Parameters.getBoolean("CloseEnabled");
       }
@@ -59,6 +64,9 @@ function RenameImagesEngine() {
 
       const rename = new RegExp(ToolParameters.renameString, ToolParameters.renameCaseInsensitive ? "i" : "");
       const close = new RegExp(ToolParameters.closeString, ToolParameters.closeCaseInsensitive ? "i" : "");
+      let numRenamed = 0;
+      let numClosed = 0;
+      let numErrors = 0;
 
       for (let i = 0; i < windows.length; i++) {
          let window = windows[i];
@@ -67,23 +75,27 @@ function RenameImagesEngine() {
          const closeMatch = view.id.match(close);
          if (ToolParameters.closeEnabled && closeMatch) {
             console.noteln("Closing view: \"" + view.id + "\"");
-            view.window.close();
+            // view.window.close();
+            // TODO: Add option to not use force close
+            view.window.forceClose();
+            numClosed += 1;
          }
 
          const renameMatch = view.id.match(rename);
          if (ToolParameters.renameEnabled && renameMatch) {
-            if (renameMatch.length < 2) {
+            let completeRename = true;
+            if (renameMatch.length < 1) {
                console.warningln("Cannot rename image. Regular expression matched with no group on view: " + view.id);
+               numErrors += 1;
                continue;
             }
-            // const groupContent = renameMatch.slice(1).join("_");
 
-            let content = ToolParameters.renamePatternString.replace(/\{(\d+)(\-[a-zA-Z])?\}/g, (_, i, f) => {
+            let content = ToolParameters.renamePatternString.replace(/\{(\d+)(\-[a-zA-Z]+)?\}/g, (_, i, f) => {
                const index = parseInt(i);
-               const value = index >= 0 && index < renameMatch.length ? renameMatch[index].toString() : ''; 
+               const value = index >= 0 && index < renameMatch.length ? renameMatch[index].toString() : '';
                if (value.length == 0) {
-                  console.warningln("No value for index " + index);
-                  return "";
+                  console.warningln("ERROR | Could not rename image (" + view.id + ") | Pattern contains invalid group index: " + index);
+                  completeRename = false;
                }
                switch(f) {
                   case "-u":
@@ -91,22 +103,26 @@ function RenameImagesEngine() {
                   case "-l":
                      return value.toLowerCase();
                   case "-p":
-                     return value[0].toUpperCase() + (value.length > 1 ? value.slice(1).toLowerCase() : "");
+                     return value.toLowerCase().replace(/(^\w|[ _]\w)/g, (_, letter) => {
+                        return letter.toUpperCase();
+                     });
                   default:
+                     console.warningln("ERROR | Could not rename image (" + view.id + ") | Pattern contains unrecognized flag: " + f);
+                     completeRename = false;
                      return value;
                }
             });
 
-            content = content.replace(/\$([a-zA-Z]+)(\-[a-zA-Z])?\$/g, (_, n, f) => {
+            content = content.replace(/\$([a-zA-Z]+)(\-[a-zA-Z]+)?\$/g, (_, n, f) => {
                const name = n.toUpperCase();
                const keywords = window.keywords;
                for (let j = 0; j < keywords.length; j++) {
                   const fits = keywords[j];
                   if (fits.name.toUpperCase() == name) {
                      const value = fits.strippedValue;
-                     // console.criticalln("DEBUG FITS value: \"" + value + "\"");
                      if (value.length == 0) {
-                        console.warningln("No value for index " + index);
+                        console.warningln("ERROR | Could not rename image (" + view.id + ") | Pattern contains invalid FITS keyword \"" + name + "\"");
+                        completeRename = false;
                         return "";
                      }
                      switch(f) {
@@ -115,29 +131,46 @@ function RenameImagesEngine() {
                         case "-l":
                            return value.toLowerCase();
                         case "-p":
-                           return value[0].toUpperCase() + (value.length > 1 ? value.slice(1).toLowerCase() : "");
+                           return value.toLowerCase().replace(/(^\w|[ _]\w)/g, (_, letter) => {
+                              return letter.toUpperCase();
+                           });
                         default:
+                           console.warningln("ERROR | Could not rename image (" + view.id + ") | Pattern contains unrecognized flag: " + f);
+                           completeRename = false;
                            return value;
                      }
                   }
                }
-               console.warningln("Failed to find FITS Keyword \"" + name + "\"");
+               console.warningln("ERROR | Could not rename image (" + view.id + ") | Failed to find FITS Keyword \"" + name + "\"");
+               completeRename = false;
                return "";
             });
-            
-            let id = this.generateValidID(content);
-            console.noteln("Renaming view \"" + view.id + "\" to \"" + id + "\"");
-            view.id = id;
+
+            if (completeRename) {
+               let id = this.generateValidID(content);
+               console.noteln("Renaming view \"" + view.id + "\" to \"" + id + "\"");
+               view.id = id;
+            } else {
+               numErrors += 1;
+            }
             // Deiconize the image and reiconize it to present the changed identifier if iconic
             if (window.iconic) {
                window.deiconize();
                window.iconize();
+            } else if (ToolParameters.renameIconize) {
+               window.iconize();
             }
-         } 
+         }
       }
+
+      console.noteln("===============================================");
+      console.noteln("Process completed | " + numRenamed + " renamed | " + numClosed + " closed | " + numErrors + " error" + (numErrors != 1 ? "s" : ""));
    };
 
    this.generateValidID = function (id) {
+      if(id.length == 0) {
+         return this.generateValidID("Image");
+      }
       id = id.replace(/[^\w]+/g,"_");
       if (id[0] >= '0' && id[0] <= '9') {
          id = "_" + id;
@@ -162,7 +195,7 @@ function MainDialog() {
    this.__base__();
    var self = this;
 
-   var labelWidth = this.font.width("Pattern: ");
+   var labelWidth = this.font.width("Options: ");
 
    // MAIN DIALOG BODY
 
@@ -270,6 +303,35 @@ function MainDialog() {
       addStretch();
    }
 
+   // Iconize
+   this.renameIconize_CheckBox = new CheckBox(this);
+   with (this.renameIconize_CheckBox) {
+       toolTip = "<p>When an image is renamed, iconize the image.</p>";
+       checked = ToolParameters.renameIconize;
+       text = "Iconize";
+       onCheck = function () {
+           ToolParameters.renameIconize = checked;
+       }
+   }
+
+   // Options
+   this.renameOptions_Label = new Label(this);
+   with (this.renameOptions_Label) {
+      text = "Options: "
+      minWidth = labelWidth;
+      maxWidth = labelWidth;
+      textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   }
+
+   // Options sizer
+   this.renameOptions_Sizer = new HorizontalSizer;
+   with (this.renameOptions_Sizer) {
+      margin = 6;
+      add(this.renameOptions_Label);
+      add(this.renameIconize_CheckBox);
+      addStretch();
+   }
+
    // Group
    this.renameGroup = new GroupBox(this)
    with (this.renameGroup) {
@@ -287,6 +349,7 @@ function MainDialog() {
       add(this.renameRegex_Sizer);
       add(this.renamePattern_Sizer);
       add(this.renameFlags_Sizer);
+      add(this.renameOptions_Sizer);
    }
 
    // --------------------------------------------------------------
