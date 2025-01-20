@@ -9,7 +9,7 @@
 #feature-info  Automatically closes or renames images according to the output of a pattern and regular expression
 
 #define TITLE "RenameImages"
-#define VERSION "1.1.0"
+#define VERSION "1.1.1"
 
 var ToolParameters = {
    renameMode: "Filename",
@@ -308,10 +308,12 @@ function MainDialog() {
       addItem("Identifier");
       addItem("Filepath");
       addItem("Filename");
+      currentItem = findItem(ToolParameters.renameMode);
       onItemSelected = function (item) {
          ToolParameters.renameMode = itemText(item);
       }
    }
+
 
    this.renameMode_Sizer = new HorizontalSizer;
    with (this.renameMode_Sizer) {
