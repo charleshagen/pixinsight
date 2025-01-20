@@ -10,7 +10,7 @@
 #include <pjsr/ProcessExitStatus.jsh>
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.2.1"
+#define VERSION "1.2.2"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -853,7 +853,7 @@ function MainDialog() {
     this.maxPeak = new NumericControl(this);
     with (this.maxPeak) {
         toolTip = "<p> This field controls the maximum peak value that a star can have to be included in the flux calculation, "+
-        "higher values will be more tollerant of brighter stars and may begin to include saturated stars, which can degrade "+
+        "higher values will be more tolerant of brighter stars and may begin to include saturated stars, which can degrade "+
         "the performance of the routine.</p>" +
         "<p>Default value is 0.8</p>"
         setPrecision(2);
@@ -934,6 +934,15 @@ function MainDialog() {
         };
     }
 
+    this.docs_Button = new ToolButton(this);
+    with (this.docs_Button) {
+       text = "Docs";
+       icon = this.scaledResource(":/process-explorer/browse-documentation.png");
+       onClick = function () {
+          Dialog.openBrowser("https://nightphotons.com/software/photometric-continuum-subtraction/");
+       };
+    }
+
     this.ok_Button = new PushButton(this);
     with (this.ok_Button) {
         text = "Execute";
@@ -956,6 +965,7 @@ function MainDialog() {
     with (this.buttons_Sizer) {
         scaledSpacing = 6;
         add(this.newInstanceButton);
+        add(this.docs_Button);
         addStretch();
         add(this.ok_Button);
         add(this.cancel_Button);

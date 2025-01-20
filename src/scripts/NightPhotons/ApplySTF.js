@@ -8,7 +8,7 @@
 #feature-info  This script is used to apply the active STF to the image
 
 #define TITLE "ApplySTF"
-#define VERSION "1.2.1"
+#define VERSION "1.2.2"
 
 var ToolParameters = {
    targetView: undefined,
@@ -138,7 +138,7 @@ function MainDialog() {
    with (this.respectMaskCheckbox) {
       text = "Respect Mask"
       checked = ToolParameters.respectMask;
-      toolTip = "<p>If a this setting is enabled, the script will respect any active mask on the image. If this setting is disabled, it will temporarily disable the mask when applying, then re-enable it after the script has completed.</p> <p>Default is disabled.</p>";
+      toolTip = "<p>Respect any active mask on the image. If this setting is disabled, it will temporarily disable the mask when applying, then re-enable it after the script has completed.</p> <p>Default is disabled.</p>";
       onClick = function () {
          ToolParameters.respectMask = !ToolParameters.respectMask;
       }
@@ -171,6 +171,16 @@ function MainDialog() {
       };
    }
 
+   this.docs_Button = new ToolButton(this);
+   with (this.docs_Button) {
+      text = "Docs";
+      icon = this.scaledResource(":/process-explorer/browse-documentation.png");
+      onClick = function () {
+         Dialog.openBrowser("https://nightphotons.com/software/apply-stf/");
+      };
+   }
+
+
    this.ok_Button = new PushButton(this);
    with (this.ok_Button) {
       text = "Execute";
@@ -193,6 +203,7 @@ function MainDialog() {
    with (this.buttons_Sizer) {
       scaledSpacing = 6;
       add(this.newInstanceButton);
+      add(this.docs_Button);
       addStretch();
       add(this.ok_Button);
       add(this.cancel_Button);

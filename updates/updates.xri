@@ -5,23 +5,29 @@
         Repository for NightPhotons utilities and scripts by Charles Hagen.
      </p>
    </description>
-   <platform os="all" arch="noarch" version="1.8.9-1:1.9.2">
-      <package fileName="nightphotons-2024-12-31.zip" sha1="488586b818a063fd5c7c411af81426300e06f976" type="script" releaseDate="20241231">
+   <platform os="all" arch="noarch" version="1.9.0:1.9.10">
+      <package fileName="nightphotons-2025-01-20.zip" sha1="7dff9815b30b6acc3c8392a1f555bc06a84551d2" type="script" releaseDate="20250120">
          <title>
-            NightPhotons processing suite 2024-12-31
+            NightPhotons processing suite 2025-01-20
          </title>
          <description>
-            <h3>RenameImages: Initial Release 1.0.0</h3>
+            <h3>RenameImages: Release 1.1.0</h3>
             <ul>
-               <li>Rename and close images according to regular expressions</li>
-               <li>Scans all open views and applies the relevant event to any matching expressions</li>
+               <li>Add Patterning</li>
+               <li>Add FITS Header support</li>
+               <li>Add Filename and Filepath matching</li>
+               <li>Add Documentation Button</li>
             </ul>
-            <h3>PhotometricContinuumSubtraction: Release 1.2.1</h3>
+            <h3>PhotometricContinuumSubtraction: Release 1.2.2</h3>
             <ul>
-               <li>Fix Typo</li>
+               <li>Add Documentation Button</li>
+            </ul>
+            <h3>ApplyStF: Release 1.2.2</h3>
+            <ul>
+               <li>Add Documentation Button</li>
             </ul>
          </description>
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2025-01-01T05:24:54.685Z" encoding="Base64">PHTMpgKDfRRmvzIfziPPrK+FoksvzrfRrKIcasQBAGNkQybCho16YNHxOpRXiBRDtIo8FkjpY7nnsTR3jN+IBw==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2025-01-20T08:41:41.134Z" encoding="Base64">W7GHLJgRrSRAvAETkeBxQzachlM2r+r7nqE2XaNJhBo3Yf/oV3PHf3ZBYhulrZOV08iVfVKrpuglKboUT7pWAA==</Signature>
