@@ -141,6 +141,7 @@ function RenameImagesEngine() {
                view.window.close();
             }
             numClosed += 1;
+            continue;
          }
 
          const renameMatch = renameString.match(rename);
