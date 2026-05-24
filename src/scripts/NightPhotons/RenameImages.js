@@ -9,7 +9,7 @@
 #feature-info  Automatically closes or renames images according to the output of a pattern and regular expression
 
 #define TITLE "RenameImages"
-#define VERSION "1.1.1"
+#define VERSION "1.1.2"
 
 var ToolParameters = {
    renameMode: "Filename",
@@ -91,6 +91,25 @@ function RenameImagesEngine() {
          var closeString = view.id;
          var renameString = view.id;
 
+         if (!ToolParameters.settingsHistory) {
+            if (view.canGoForward || view.canGoBackward) {
+               numSkipped += 1;
+               continue;
+            }
+         }
+
+         const closeMatch = closeString.match(close);
+         if (ToolParameters.closeEnabled && closeMatch) {
+            console.noteln("Closing view: \"" + view.id + "\"");
+            if (ToolParameters.settingsForceClose) {
+               view.window.forceClose();
+            } else {
+               view.window.close();
+            }
+            numClosed += 1;
+            continue;
+         }
+
          switch(ToolParameters.renameMode) {
             case "Identifier":
                renameString = view.id;
@@ -123,25 +142,6 @@ function RenameImagesEngine() {
             default:
                console.criticalln("Error: Invalid rename mode. Canceling operation.");
                return;
-         }
-
-         if (!ToolParameters.settingsHistory) {
-            if (view.canGoForward || view.canGoBackward) {
-               numSkipped += 1;
-               continue;
-            }
-         }
-
-         const closeMatch = closeString.match(close);
-         if (ToolParameters.closeEnabled && closeMatch) {
-            console.noteln("Closing view: \"" + view.id + "\"");
-            if (ToolParameters.settingsForceClose) {
-               view.window.forceClose();
-            } else {
-               view.window.close();
-            }
-            numClosed += 1;
-            continue;
          }
 
          const renameMatch = renameString.match(rename);

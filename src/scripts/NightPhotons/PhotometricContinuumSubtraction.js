@@ -10,7 +10,7 @@
 #include <pjsr/ProcessExitStatus.jsh>
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.2.2"
+#define VERSION "1.2.3"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -104,7 +104,7 @@ function continuumSubtract() {
     let closeStarlessNB = false;
 
     with (ToolParameters) {
-        if (nbStarView == undefined || bbStarView == undefined) {
+        if (nbStarView == undefined || bbStarView == undefined || nbStarView == null || bbStarView == null ) {
             console.criticalln("Error: One or both of the Star-containing images are undefined. Please select a view!");
             console.show();
             return;
@@ -122,9 +122,10 @@ function continuumSubtract() {
         // See if starless is enabled
         if (starlessEnabled) {
             // If enabled and one or both of the starless images are undefined, warn but continue
-            if (generateStarless && nbStarlessView == undefined) {
+            console.warningln("Starless View: " + nbStarlessView);
+            if (generateStarless && (nbStarlessView == undefined || nbStarlessView == null || nbStarlessView.isNull )) {
                 if (ToolParameters.starRemovalMethod != 0) {
-                    ToolParameters.nbStarlessView = cloneView(ToolParameters.nbStarView, generateValidID(ToolParameters.nbStarView.id + "_starless")); 
+                    ToolParameters.nbStarlessView = cloneView(ToolParameters.nbStarView, generateValidID(ToolParameters.nbStarView.id + "_starless"));
                     if (!removeStars(ToolParameters.nbStarlessView)) {
                         generateStarless = false;
                     }
@@ -133,9 +134,9 @@ function continuumSubtract() {
                     generateStarless = false;
                 }
             }
-            if (generateStarless && bbStarlessView == undefined) {
+            if (generateStarless && (bbStarlessView == undefined || bbStarlessView == null || bbStarlessView.isNull )) {
                 if (ToolParameters.starRemovalMethod != 0) {
-                    ToolParameters.bbStarlessView = cloneView(ToolParameters.bbStarView, generateValidID(ToolParameters.bbStarView.id + "_starless")); 
+                    ToolParameters.bbStarlessView = cloneView(ToolParameters.bbStarView, generateValidID(ToolParameters.bbStarView.id + "_starless"));
                     if (!removeStars(ToolParameters.bbStarlessView)) {
                         generateStarless = false;
                     }
@@ -193,7 +194,7 @@ function continuumSubtract() {
         starFluxes[narrowbandPSF[i][0]][1] = narrowbandPSF[i][16];
     }
 
-    // Plot file output initialization 
+    // Plot file output initialization
     var tmpDir = File.systemTempDirectory;
     var dataFilepath = tmpDir + "/data.dat";
     var trendFilepath = tmpDir + "/trendline.dat";
@@ -210,12 +211,12 @@ function continuumSubtract() {
       if (starFluxes[i].length == 2 && starFluxes[i][0] != null && starFluxes[i][1] != null) {
         const x = starFluxes[i][0];
         const y = starFluxes[i][1];
-    
+
         xList.push(x);
         yList.push(y);
 
         ratioList.push(starFluxes[i][0] / starFluxes[i][1]);
-        
+
         if (ToolParameters.generatePlot) {
             f.outTextLn(format("%.4f %.4f", x, y));
         }
@@ -244,25 +245,25 @@ function continuumSubtract() {
 
     // Star-Containing Subtracted Image
     let starID = generateValidID(ToolParameters.nbStarView.id + "_sub")
-    subtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, starID);
+    subtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ToolParameters.bbStarView, ratio, starID);
     applyAstrometricSolution(starID);
 
     // Starless Subtracted Image
     if (generateStarless) {
         let starlessID = generateValidID(ToolParameters.nbStarlessView.id + "_sub")
-        subtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, starlessID);
+        subtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ToolParameters.bbStarView, ratio, starlessID);
         applyAstrometricSolution(starlessID);
     }
 
     // Clean up starless images if generated
-    if (closeStarlessBB) { 
+    if (closeStarlessBB) {
         console.writeln("Cleaning up broadband starless");
-        ToolParameters.bbStarlessView.window.forceClose(); 
+        ToolParameters.bbStarlessView.window.forceClose();
     }
 
-    if (closeStarlessNB) { 
+    if (closeStarlessNB) {
         console.writeln("Cleaning up narrowband starless");
-        ToolParameters.nbStarlessView.window.forceClose(); 
+        ToolParameters.nbStarlessView.window.forceClose();
     }
 
     // Generate the plot
@@ -407,9 +408,9 @@ function applyAstrometricSolution(id) {
     }
 }
 
-function subtractImage(img1, img2, scaleFactor, id) {
+function subtractImage(img1, img2, med_img, scaleFactor, id) {
     let P = new PixelMath;
-    P.expression = img1.id + "-("+img2.id+"-med("+img2.id+"))/"+scaleFactor;
+    P.expression = img1.id + "-("+img2.id+"-med("+med_img.id+"))/"+scaleFactor;
     with (P) {
         useSingleExpression = true;
         generateOutput = true;
@@ -462,10 +463,11 @@ function removeStars(view) {
         case 1:
             try {
                 let P = new StarXTerminator;
+                P.ai_file = "StarXTerminator.11.pb";
                 P.stars = false;
                 P.unscreen = false;
                 P.overlap = 0.20;
-            
+
                 P.executeOn(view)
                 return true;
             } catch (e) {
@@ -487,7 +489,7 @@ function removeStars(view) {
                 P.executeOn(view)
                 return true;
             } catch (e) {
-                console.criticalln("Could not remove stars from Image. Ensure that StarXTerminator is installed")
+                console.criticalln("Could not remove stars from Image. Ensure that StarNet2 is installed")
                 console.criticalln(e)
                 console.show();
                 return false;
@@ -593,7 +595,7 @@ function MainDialog() {
         onViewSelected = function (view) {
             ToolParameters.nbStarView = view;
         }
-        if (ToolParameters.nbStarView != undefined) {
+        if (ToolParameters.nbStarView != undefined && ToolParameters.nbStarView != null) {
             currentView = ToolParameters.nbStarView;
         }
     }
@@ -634,7 +636,7 @@ function MainDialog() {
         onViewSelected = function (view) {
             ToolParameters.bbStarView = view;
         }
-        if (ToolParameters.bbStarView != undefined) {
+        if (ToolParameters.bbStarView != undefined && ToolParameters.bbStarView != null) {
             currentView = ToolParameters.bbStarView;
         }
     }
@@ -722,7 +724,7 @@ function MainDialog() {
         onViewSelected = function (view) {
             ToolParameters.nbStarlessView = view;
         }
-        if (ToolParameters.nbStarlessView != undefined) {
+        if (ToolParameters.nbStarlessView != undefined && ToolParameters.nbStarlessView != null) {
             currentView = ToolParameters.nbStarlessView;
         }
     }
@@ -763,7 +765,7 @@ function MainDialog() {
         onViewSelected = function (view) {
             ToolParameters.bbStarlessView = view;
         }
-        if (ToolParameters.bbStarlessView != undefined) {
+        if (ToolParameters.bbStarlessView != undefined && ToolParameters.bbStarlessView != null) {
             currentView = ToolParameters.bbStarlessView;
         }
     }
