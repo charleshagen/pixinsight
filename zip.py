@@ -19,14 +19,14 @@ def zip_directories():
         raise FileNotFoundError(f"Directory/ies not found: {', '.join(missing)}")
 
     with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
-        # Add all files from rsc/ (no exclusions)
+        # Add all files from rsc/
         for file in rsc_dir.rglob("*"):
             if file.is_file():
                 zf.write(file, file.relative_to(base_dir))
 
-        # Add files from src/, skipping .xsgn files
+        # Add all files from src/
         for file in src_dir.rglob("*"):
-            if file.is_file() and file.suffix != ".xsgn":
+            if file.is_file():
                 zf.write(file, file.relative_to(base_dir))
 
     print(f"Created: {zip_name.relative_to(base_dir)}")
@@ -44,7 +44,8 @@ def zip_directories():
     )
     print("\nupdates.xri entry:")
     if result.returncode == 0:
-        print(f"<package fileName=\"{zip_name.name}\" sha1=\"{result.stdout.splitlines()[1]}\" type=\"script\" releaseDate=\"{date.today().strftime('%Y%m%d')}\">")
+        entry = f"<package fileName=\"{zip_name.name}\" sha1=\"{result.stdout.splitlines()[1]}\" type=\"script\" releaseDate=\"{date.today().strftime('%Y%m%d')}\">"
+        print(entry)
     else:
         print(result.stderr)
 
