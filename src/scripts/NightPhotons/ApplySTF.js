@@ -1,14 +1,13 @@
-#include <pjsr/StdButton.jsh>
-#include <pjsr/StdIcon.jsh>
-#include <pjsr/Sizer.jsh>
-#include <pjsr/NumericControl.jsh>
+#engine v8
 
 #feature-id    ApplySTF : NightPhotons > ApplySTF
 #feature-icon  @script_icons_dir/ApplySTF.svg
 #feature-info  This script is used to apply the active STF to the image
 
+CoreApplication.ensureMinimumVersion( 1, 9, 4 );
+
 #define TITLE "ApplySTF"
-#define VERSION "1.2.2"
+#define VERSION "1.3.0"
 
 var ToolParameters = {
    targetView: undefined,
@@ -27,11 +26,11 @@ function ApplySTF() {
    var P = new HistogramTransformation;
    var HTArr = P.H;
    var STFArr = ToolParameters.targetView.stf;
-   var isMaskEnabled = ToolParameters.targetView.window.maskEnabled;
+   var isMaskEnabled = ToolParameters.targetView.window.maskEnabled && !ToolParameters.targetView.window.mask.isNull;
    var isLinked = false;
-
+ 
    if (isMaskEnabled && !ToolParameters.respectMask) {
-      console.warningln("Mask is enabled, temproarily disabling mask");
+      console.noteln("Mask is enabled, temproarily disabling mask");
       ToolParameters.targetView.window.maskEnabled = false;
    }
 
@@ -72,9 +71,9 @@ function ApplySTF() {
    }
 }
 
-function MainDialog() {
-   this.__base__ = Dialog;
-   this.__base__();
+var MainDialog = class extends Dialog {
+constructor() {
+   super();
    var self = this;
 
    // MAIN DIALOG BODY
@@ -89,45 +88,38 @@ function MainDialog() {
     // Description & Title
     // --------------------------------------------------------------
    this.label = new Label(this);
-   with (this.label) {
-      wordWrapping = true;
-      useRichText = true;
-      margin = 4;
-      text = "<b>ApplySTF v" + VERSION + "</b> | Charles Hagen<br></br><br></br>"
-         + "Execute to apply the currently active STF to the image permanently. "
-         + "Create an instance icon to apply the script to any image without opening "
-         + "the script dialog.";
-   }
+   this.label.wordWrapping = true;
+   this.label.useRichText = true;
+   this.label.margin = 4;
+   this.label.text = "<b>ApplySTF v" + VERSION + "</b> | Charles Hagen<br></br><br></br>"
+      + "Execute to apply the currently active STF to the image permanently. "
+      + "Create an instance icon to apply the script to any image without opening "
+      + "the script dialog.";
 
    // Target View List
    this.targetViewList = new ViewList(this);
-   with (this.targetViewList) {
-      getMainViews();
-      onViewSelected = function (view) {
-         ToolParameters.targetView = view;
-      }
+   this.targetViewList.getMainViews();
+   this.targetViewList.onViewSelected = function (view) {
+      ToolParameters.targetView = view;
    }
 
+
    this.targetViewSetActiveButton = new ToolButton(this);
-   with (this.targetViewSetActiveButton) {
-      icon = this.scaledResource(":/icons/select-view.png");
-      setScaledFixedSize(20, 20);
-      toolTip = "Set active window as target";
-      onClick = function () {
-         ToolParameters.targetView = ImageWindow.activeWindow.currentView;
-         self.targetViewList.currentView = ToolParameters.targetView;
-      }
+   this.targetViewSetActiveButton.icon = this.scaledResource(":/icons/select-view.png");
+   this.targetViewSetActiveButton.setScaledFixedSize(20, 20);
+   this.targetViewSetActiveButton.toolTip = "Set active window as target";
+   this.targetViewSetActiveButton.onClick = function () {
+      ToolParameters.targetView = ImageWindow.activeWindow.currentView;
+      self.targetViewList.currentView = ToolParameters.targetView;
    }
 
    this.targetGroup = new GroupBox(this)
-   with (this.targetGroup) {
-      sizer = new HorizontalSizer(this);
-      sizer.margin = 6;
-      sizer.add(this.targetViewList);
-      sizer.addSpacing(5);
-      sizer.add(this.targetViewSetActiveButton);
-      title = "Target View";
-   }
+   this.targetGroup.sizer = new HorizontalSizer(this);
+   this.targetGroup.sizer.margin = 6;
+   this.targetGroup.sizer.add(this.targetViewList);
+   this.targetGroup.sizer.addSpacing(5);
+   this.targetGroup.sizer.add(this.targetViewSetActiveButton);
+   this.targetGroup.title = "Target View";
 
     // --------------------------------------------------------------
     // Settings
@@ -135,22 +127,18 @@ function MainDialog() {
 
 
    this.respectMaskCheckbox = new CheckBox(this);
-   with (this.respectMaskCheckbox) {
-      text = "Respect Mask"
-      checked = ToolParameters.respectMask;
-      toolTip = "<p>Respect any active mask on the image. If this setting is disabled, it will temporarily disable the mask when applying, then re-enable it after the script has completed.</p> <p>Default is disabled.</p>";
-      onClick = function () {
-         ToolParameters.respectMask = !ToolParameters.respectMask;
-      }
+   this.respectMaskCheckbox.text = "Respect Mask"
+   this.respectMaskCheckbox.checked = ToolParameters.respectMask;
+   this.respectMaskCheckbox.toolTip = "<p>Respect any active mask on the image. If this setting is disabled, it will temporarily disable the mask when applying, then re-enable it after the script has completed.</p> <p>Default is disabled.</p>";
+   this.respectMaskCheckbox.onClick = function () {
+      ToolParameters.respectMask = !ToolParameters.respectMask;
    }
 
    this.settingsGroup = new GroupBox(this)
-   with (this.settingsGroup) {
-      sizer = new HorizontalSizer(this);
-      sizer.margin = 6;
-      sizer.add(this.respectMaskCheckbox);
-      title = "Options";
-   }
+   this.settingsGroup.sizer = new HorizontalSizer(this);
+   this.settingsGroup.sizer.margin = 6;
+   this.settingsGroup.sizer.add(this.respectMaskCheckbox);
+   this.settingsGroup.title = "Options";
 
 
     // --------------------------------------------------------------
@@ -158,73 +146,65 @@ function MainDialog() {
     // --------------------------------------------------------------
 
    this.newInstanceButton = new ToolButton(this);
-   with (this.newInstanceButton) {
-      icon = this.scaledResource(":/process-interface/new-instance.png");
-      setScaledFixedSize(20, 20);
-      toolTip = "New Instance";
-      onMousePress = function () {
-         this.hasFocus = true;
-         ToolParameters.save();
+   this.newInstanceButton.icon = this.scaledResource(":/process-interface/new-instance.png");
+   this.newInstanceButton.setScaledFixedSize(20, 20);
+   this.newInstanceButton.toolTip = "New Instance";
+   this.newInstanceButton.onMousePress = function () {
+      this.hasFocus = true;
+      ToolParameters.save();
 
-         this.pushed = false;
-         this.dialog.newInstance();
-      };
-   }
+      this.pushed = false;
+      this.dialog.newInstance();
+   };
+
 
    this.docs_Button = new ToolButton(this);
-   with (this.docs_Button) {
-      text = "Docs";
-      icon = this.scaledResource(":/process-explorer/browse-documentation.png");
-      onClick = function () {
-         Dialog.openBrowser("https://nightphotons.com/software/apply-stf/");
-      };
-   }
+   this.docs_Button.text = "Docs";
+   this.docs_Button.icon = this.scaledResource(":/process-explorer/browse-documentation.png");
+   this.docs_Button.onClick = function () {
+      Dialog.openBrowser("https://nightphotons.com/software/apply-stf/");
+   };
+
 
 
    this.ok_Button = new PushButton(this);
-   with (this.ok_Button) {
-      text = "Execute";
-      icon = this.scaledResource(":/icons/ok.png");
-      onClick = function () {
-         this.dialog.ok();
-      };
-   }
+   this.ok_Button.text = "Execute";
+   this.ok_Button.icon = this.scaledResource(":/icons/ok.png");
+   this.ok_Button.onClick = function () {
+      this.dialog.ok();
+   };
+
 
    this.cancel_Button = new PushButton(this);
-   with (this.cancel_Button) {
-      text = "Cancel";
-      icon = this.scaledResource(":/icons/cancel.png");
-      onClick = function () {
-         this.dialog.cancel();
-      };
-   }
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource(":/icons/cancel.png");
+   this.cancel_Button.onClick = function () {
+      this.dialog.cancel();
+   };
 
    this.buttons_Sizer = new HorizontalSizer;
-   with (this.buttons_Sizer) {
-      scaledSpacing = 6;
-      add(this.newInstanceButton);
-      add(this.docs_Button);
-      addStretch();
-      add(this.ok_Button);
-      add(this.cancel_Button);
-   }
+   this.buttons_Sizer.scaledSpacing = 6;
+   this.buttons_Sizer.add(this.newInstanceButton);
+   this.buttons_Sizer.add(this.docs_Button);
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add(this.ok_Button);
+   this.buttons_Sizer.add(this.cancel_Button);
 
 
    // GLOBAL SIZER
    this.sizer = new VerticalSizer(this);
-   with (this.sizer) {
-      margin = 6;
-      spacing = 4;
-      add(this.label);
-      addSpacing(4);
-      add(this.targetGroup);
-      addSpacing(4);
-      add(this.settingsGroup)
-      addSpacing(4);
-      addStretch();
-      add(this.buttons_Sizer);
-   }
+   this.sizer.margin = 6;
+   this.sizer.spacing = 4;
+   this.sizer.add(this.label);
+   this.sizer.addSpacing(4);
+   this.sizer.add(this.targetGroup);
+   this.sizer.addSpacing(4);
+   this.sizer.add(this.settingsGroup)
+   this.sizer.addSpacing(4);
+   this.sizer.addStretch();
+   this.sizer.add(this.buttons_Sizer);
 }
+};
 MainDialog.prototype = new Dialog;
 
 function showDialog() {
