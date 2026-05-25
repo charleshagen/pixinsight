@@ -81,7 +81,7 @@ var ToolParameters = {
         }
         if (Parameters.has("StarRemovalMethod")) {
             ToolParameters.starRemovalMethod = Parameters.getInteger("StarRemovalMethod");
-            if (![1,2].includes(ToolParameters.bbStarlessView)) {
+            if (![0,1,2].includes(ToolParameters.starRemovalMethod)) {
                 console.warningln("Detected invalid star removal method. Resetting to default value.")
                 ToolParameters.starRemovalMethod = 1;
             }
