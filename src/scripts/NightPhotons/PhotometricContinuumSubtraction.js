@@ -7,7 +7,7 @@
 CoreApplication.ensureMinimumVersion( 1, 9, 4 );
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.3.0"
+#define VERSION "1.3.1"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -20,23 +20,23 @@ var ToolParameters = {
     maxPeak: 0.8,
     generatePlot: true,
     save: function () {
-        if (ToolParameters.nbStarView != undefined && !ToolParameters.nbStarView.isNull) {
+        if (ToolParameters.nbStarView != undefined) {
             Parameters.set("NarrowbandStarViewID", ToolParameters.nbStarView.id);
         } else {
             Parameters.remove("NarrowbandStarViewID");
         }
-        if (ToolParameters.bbStarView != undefined && !ToolParameters.bbStarView.isNull) {
+        if (ToolParameters.bbStarView != undefined) {
             Parameters.set("BroadbandStarViewID", ToolParameters.bbStarView.id);
         } else {
             Parameters.remove("BroadbandStarViewID");
         }
-        if (ToolParameters.nbStarlessView != undefined && !ToolParameters.nbStarlessView.isNull) {
+        if (ToolParameters.nbStarlessView != undefined) {
             Parameters.set("NarrowbandStarlessViewID", ToolParameters.nbStarlessView.id);
         } else {
             Parameters.remove("NarrowbandStarlessViewID");
         }
 
-        if (ToolParameters.bbStarlessView != undefined && !ToolParameters.bbStarlessView.isNull) {
+        if (ToolParameters.bbStarlessView != undefined) {
             Parameters.set("BroadbandStarlessViewID", ToolParameters.bbStarlessView.id);
         } else {
             Parameters.remove("BroadbandStarlessViewID");
@@ -50,28 +50,28 @@ var ToolParameters = {
     load: function () {
         if (Parameters.has("NarrowbandStarViewID")) {
             ToolParameters.nbStarView = View.viewById(Parameters.getString("NarrowbandStarViewID"));
-            if (ToolParameters.nbStarView.isNull) {
+            if (ToolParameters.nbStarView == null) {
                 console.warningln("Could not find view: \"" + Parameters.getString("NarrowbandStarViewID") + "\"")
                 ToolParameters.nbStarView = undefined;
             }
         }
         if (Parameters.has("BroadbandStarViewID")) {
             ToolParameters.bbStarView = View.viewById(Parameters.getString("BroadbandStarViewID"));
-            if (ToolParameters.bbStarView.isNull) {
+            if (ToolParameters.bbStarView == null) {
                 console.warningln("Could not find view: \"" + Parameters.getString("BroadbandStarViewID") + "\"")
                 ToolParameters.bbStarView = undefined;
             }
         }
         if (Parameters.has("NarrowbandStarlessViewID")) {
             ToolParameters.nbStarlessView = View.viewById(Parameters.getString("NarrowbandStarlessViewID"));
-            if (ToolParameters.nbStarlessView.isNull) {
+            if (ToolParameters.nbStarlessView == null) {
                 console.warningln("Could not find view: \"" + Parameters.getString("NarrowbandStarlessViewID") + "\"")
                 ToolParameters.nbStarlessView = undefined;
             }
         }
         if (Parameters.has("BroadbandStarlessViewID")) {
             ToolParameters.bbStarlessView = View.viewById(Parameters.getString("BroadbandStarlessViewID"));
-            if (ToolParameters.bbStarlessView.isNull) {
+            if (ToolParameters.bbStarlessView == null) {
                 console.warningln("Could not find view: \"" + Parameters.getString("BroadbandStarlessViewID") + "\"")
                 ToolParameters.bbStarlessView = undefined;
             }
@@ -81,6 +81,10 @@ var ToolParameters = {
         }
         if (Parameters.has("StarRemovalMethod")) {
             ToolParameters.starRemovalMethod = Parameters.getInteger("StarRemovalMethod");
+            if (![1,2].includes(ToolParameters.bbStarlessView)) {
+                console.warningln("Detected invalid star removal method. Resetting to default value.")
+                ToolParameters.starRemovalMethod = 1;
+            }
         }
         if (Parameters.has("MaximumStars")) {
             ToolParameters.maxStars = Parameters.getInteger("MaximumStars");
@@ -100,8 +104,7 @@ function continuumSubtract() {
     let closeStarlessBB = false;
     let closeStarlessNB = false;
 
-    if (ToolParameters.nbStarView == undefined || ToolParameters.bbStarView == undefined ||
-        ToolParameters.nbStarView == null || ToolParameters.bbStarView == null) {
+    if (ToolParameters.nbStarView == null || ToolParameters.bbStarView == null) {
         console.criticalln("Error: One or both of the Star-containing images are undefined. Please select a view!");
         console.show();
         return;
@@ -116,48 +119,37 @@ function continuumSubtract() {
         console.show();
         return;
     }
-    // See if starless is enabled
-    if (ToolParameters.starlessEnabled) {
-        // If enabled and one or both of the starless images are undefined, warn but continue
-        console.warningln("Starless View: " + ToolParameters.nbStarlessView);
-        if (generateStarless && (ToolParameters.nbStarlessView == undefined || ToolParameters.nbStarlessView == null || ToolParameters.nbStarlessView.isNull)) {
-            if (ToolParameters.starRemovalMethod != 0) {
+    if (generateStarless) {
+        if (ToolParameters.nbStarlessView == null) {
+            if ([1,2].includes(ToolParameters.starRemovalMethod)) {
                 ToolParameters.nbStarlessView = cloneView(ToolParameters.nbStarView, generateValidID(ToolParameters.nbStarView.id + "_starless"));
-                if (!removeStars(ToolParameters.nbStarlessView)) {
-                    generateStarless = false;
-                }
+                if (ToolParameters.nbStarlessView == null || !removeStars(ToolParameters.nbStarlessView)) generateStarless = false;
                 closeStarlessNB = true;
             } else {
                 generateStarless = false;
             }
         }
-        if (generateStarless && (ToolParameters.bbStarlessView == undefined || ToolParameters.bbStarlessView == null || ToolParameters.bbStarlessView.isNull)) {
-            if (ToolParameters.starRemovalMethod != 0) {
+        if (generateStarless && ToolParameters.bbStarlessView == null) {
+            if ([1,2].includes(ToolParameters.starRemovalMethod)) {
                 ToolParameters.bbStarlessView = cloneView(ToolParameters.bbStarView, generateValidID(ToolParameters.bbStarView.id + "_starless"));
-                if (!removeStars(ToolParameters.bbStarlessView)) {
-                    generateStarless = false;
-                }
+                if (ToolParameters.bbStarlessView == null || !removeStars(ToolParameters.bbStarlessView)) generateStarless = false;
                 closeStarlessBB = true;
             } else {
                 generateStarless = false;
             }
         }
-        if (generateStarless) {
-            if (!ToolParameters.nbStarlessView.image.isGrayscale) {
-                console.warningln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
-                console.show();
-                generateStarless = false;
-            }
-            if (!ToolParameters.bbStarlessView.image.isGrayscale) {
-                console.warningln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
-                console.show();
-                generateStarless = false;
-            }
+        if (generateStarless && !ToolParameters.nbStarlessView.image.isGrayscale) {
+            console.warningln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
+            console.show();
+            generateStarless = false;
         }
-
-        if (!generateStarless) {
+        if (generateStarless && !ToolParameters.bbStarlessView.image.isGrayscale) {
+            console.warningln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
+            console.show();
+            generateStarless = false;
+        }
+        if (!generateStarless)
             console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image! Define starless images or enable StarXterminator as a fallback.");
-        }
     }
 
     let broadbandImage = ToolParameters.bbStarView.image;
@@ -382,7 +374,7 @@ function generateValidID(id) {
     if (View.viewById(id) == null){
         return id;
     }
-    while(!View.viewById(newID).isNull) {
+    while (View.viewById(newID) != null) {
         iteration += 1;
         newID = id + iteration;
     }
@@ -578,6 +570,10 @@ constructor() {
     this.nbStarViewList = new ViewList(this);
     this.nbStarViewList.getMainViews();
     this.nbStarViewList.onViewSelected = function (view) {
+        if (view.isNull) {
+            ToolParameters.nbStarView = undefined;
+            return;    
+        }
         ToolParameters.nbStarView = view;
     };
     if (ToolParameters.nbStarView != undefined && ToolParameters.nbStarView != null) {
@@ -611,6 +607,10 @@ constructor() {
     this.bbStarViewList = new ViewList(this);
     this.bbStarViewList.getMainViews();
     this.bbStarViewList.onViewSelected = function (view) {
+        if (view.isNull) {
+            ToolParameters.bbStarView = undefined;
+            return;    
+        }
         ToolParameters.bbStarView = view;
     };
     if (ToolParameters.bbStarView != undefined && ToolParameters.bbStarView != null) {
@@ -680,6 +680,10 @@ constructor() {
     this.nbStarlessViewList = new ViewList(this);
     this.nbStarlessViewList.getMainViews();
     this.nbStarlessViewList.onViewSelected = function (view) {
+        if (view.isNull) {
+            ToolParameters.nbStarlessView = undefined;
+            return;    
+        }
         ToolParameters.nbStarlessView = view;
     };
     if (ToolParameters.nbStarlessView != undefined && ToolParameters.nbStarlessView != null) {
@@ -713,6 +717,10 @@ constructor() {
     this.bbStarlessViewList = new ViewList(this);
     this.bbStarlessViewList.getMainViews();
     this.bbStarlessViewList.onViewSelected = function (view) {
+        if (view.isNull) {
+            ToolParameters.bbStarlessView = undefined;
+            return;    
+        }
         ToolParameters.bbStarlessView = view;
     };
     if (ToolParameters.bbStarlessView != undefined && ToolParameters.bbStarlessView != null) {
