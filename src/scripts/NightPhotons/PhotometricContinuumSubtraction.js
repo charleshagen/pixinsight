@@ -1,16 +1,13 @@
+#engine v8
+
 #feature-id    PhotometricContinuumSubtraction : NightPhotons > PhotometricContinuumSubtraction
 #feature-icon  @script_icons_dir/PhotometricContinuumSubtraction.svg
 #feature-info  Fully automatic continuum subtraction using a photometric calibration routine. Processes both star-containing and starless images to produce continuum-free narrowband images.
 
-#include <pjsr/StarDetector.jsh>
-#include <pjsr/StdButton.jsh>
-#include <pjsr/StdIcon.jsh>
-#include <pjsr/Sizer.jsh>
-#include <pjsr/NumericControl.jsh>
-#include <pjsr/ProcessExitStatus.jsh>
+CoreApplication.ensureMinimumVersion( 1, 9, 4 );
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.2.2"
+#define VERSION "1.3.0"
 
 var ToolParameters = {
     nbStarView: undefined,
@@ -103,63 +100,63 @@ function continuumSubtract() {
     let closeStarlessBB = false;
     let closeStarlessNB = false;
 
-    with (ToolParameters) {
-        if (nbStarView == undefined || bbStarView == undefined) {
-            console.criticalln("Error: One or both of the Star-containing images are undefined. Please select a view!");
-            console.show();
-            return;
-        }
-        if (!ToolParameters.nbStarView.image.isGrayscale) {
-            console.criticalln("Invalid colorspace for image: " + ToolParameters.nbStarView.id + ". Must be grayscale.");
-            console.show();
-            return;
-        }
-        if (!ToolParameters.bbStarView.image.isGrayscale) {
-            console.criticalln("Invalid colorspace for image: " + ToolParameters.bbStarView.id + ". Must be grayscale.");
-            console.show();
-            return;
-        }
-        // See if starless is enabled
-        if (starlessEnabled) {
-            // If enabled and one or both of the starless images are undefined, warn but continue
-            if (generateStarless && nbStarlessView == undefined) {
-                if (ToolParameters.starRemovalMethod != 0) {
-                    ToolParameters.nbStarlessView = cloneView(ToolParameters.nbStarView, generateValidID(ToolParameters.nbStarView.id + "_starless")); 
-                    if (!removeStars(ToolParameters.nbStarlessView)) {
-                        generateStarless = false;
-                    }
-                    closeStarlessNB = true;
-                } else {
+    if (ToolParameters.nbStarView == undefined || ToolParameters.bbStarView == undefined ||
+        ToolParameters.nbStarView == null || ToolParameters.bbStarView == null) {
+        console.criticalln("Error: One or both of the Star-containing images are undefined. Please select a view!");
+        console.show();
+        return;
+    }
+    if (!ToolParameters.nbStarView.image.isGrayscale) {
+        console.criticalln("Invalid colorspace for image: " + ToolParameters.nbStarView.id + ". Must be grayscale.");
+        console.show();
+        return;
+    }
+    if (!ToolParameters.bbStarView.image.isGrayscale) {
+        console.criticalln("Invalid colorspace for image: " + ToolParameters.bbStarView.id + ". Must be grayscale.");
+        console.show();
+        return;
+    }
+    // See if starless is enabled
+    if (ToolParameters.starlessEnabled) {
+        // If enabled and one or both of the starless images are undefined, warn but continue
+        console.warningln("Starless View: " + ToolParameters.nbStarlessView);
+        if (generateStarless && (ToolParameters.nbStarlessView == undefined || ToolParameters.nbStarlessView == null || ToolParameters.nbStarlessView.isNull)) {
+            if (ToolParameters.starRemovalMethod != 0) {
+                ToolParameters.nbStarlessView = cloneView(ToolParameters.nbStarView, generateValidID(ToolParameters.nbStarView.id + "_starless"));
+                if (!removeStars(ToolParameters.nbStarlessView)) {
                     generateStarless = false;
                 }
+                closeStarlessNB = true;
+            } else {
+                generateStarless = false;
             }
-            if (generateStarless && bbStarlessView == undefined) {
-                if (ToolParameters.starRemovalMethod != 0) {
-                    ToolParameters.bbStarlessView = cloneView(ToolParameters.bbStarView, generateValidID(ToolParameters.bbStarView.id + "_starless")); 
-                    if (!removeStars(ToolParameters.bbStarlessView)) {
-                        generateStarless = false;
-                    }
-                    closeStarlessBB = true;
-                } else {
+        }
+        if (generateStarless && (ToolParameters.bbStarlessView == undefined || ToolParameters.bbStarlessView == null || ToolParameters.bbStarlessView.isNull)) {
+            if (ToolParameters.starRemovalMethod != 0) {
+                ToolParameters.bbStarlessView = cloneView(ToolParameters.bbStarView, generateValidID(ToolParameters.bbStarView.id + "_starless"));
+                if (!removeStars(ToolParameters.bbStarlessView)) {
                     generateStarless = false;
                 }
+                closeStarlessBB = true;
+            } else {
+                generateStarless = false;
             }
-            if (generateStarless) {
-                if (!ToolParameters.nbStarlessView.image.isGrayscale) {
-                    console.warningln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
-                    console.show();
-                    generateStarless = false;
-                }
-                if (!ToolParameters.bbStarlessView.image.isGrayscale) {
-                    console.warningln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
-                    console.show();
-                    generateStarless = false;
-                }
+        }
+        if (generateStarless) {
+            if (!ToolParameters.nbStarlessView.image.isGrayscale) {
+                console.warningln("Invalid colorspace for image: " + ToolParameters.nbStarlessView.id + ". Must be grayscale.");
+                console.show();
+                generateStarless = false;
             }
+            if (!ToolParameters.bbStarlessView.image.isGrayscale) {
+                console.warningln("Invalid colorspace for image: " + ToolParameters.bbStarlessView.id + ". Must be grayscale.");
+                console.show();
+                generateStarless = false;
+            }
+        }
 
-            if (!generateStarless) {
-                console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image! Define starless images or enable StarXterminator as a fallback.");
-            }
+        if (!generateStarless) {
+            console.warningln("Warning: One or both of the starless images are undefined. Cannot create starless image! Define starless images or enable StarXterminator as a fallback.");
         }
     }
 
@@ -193,7 +190,7 @@ function continuumSubtract() {
         starFluxes[narrowbandPSF[i][0]][1] = narrowbandPSF[i][16];
     }
 
-    // Plot file output initialization 
+    // Plot file output initialization
     var tmpDir = File.systemTempDirectory;
     var dataFilepath = tmpDir + "/data.dat";
     var trendFilepath = tmpDir + "/trendline.dat";
@@ -210,12 +207,10 @@ function continuumSubtract() {
       if (starFluxes[i].length == 2 && starFluxes[i][0] != null && starFluxes[i][1] != null) {
         const x = starFluxes[i][0];
         const y = starFluxes[i][1];
-    
+
         xList.push(x);
         yList.push(y);
 
-        ratioList.push(starFluxes[i][0] / starFluxes[i][1]);
-        
         if (ToolParameters.generatePlot) {
             f.outTextLn(format("%.4f %.4f", x, y));
         }
@@ -244,25 +239,25 @@ function continuumSubtract() {
 
     // Star-Containing Subtracted Image
     let starID = generateValidID(ToolParameters.nbStarView.id + "_sub")
-    subtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ratio, starID);
+    subtractImage(ToolParameters.nbStarView, ToolParameters.bbStarView, ToolParameters.bbStarView, ratio, starID);
     applyAstrometricSolution(starID);
 
     // Starless Subtracted Image
     if (generateStarless) {
         let starlessID = generateValidID(ToolParameters.nbStarlessView.id + "_sub")
-        subtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ratio, starlessID);
+        subtractImage(ToolParameters.nbStarlessView, ToolParameters.bbStarlessView, ToolParameters.bbStarView, ratio, starlessID);
         applyAstrometricSolution(starlessID);
     }
 
     // Clean up starless images if generated
-    if (closeStarlessBB) { 
+    if (closeStarlessBB) {
         console.writeln("Cleaning up broadband starless");
-        ToolParameters.bbStarlessView.window.forceClose(); 
+        ToolParameters.bbStarlessView.window.forceClose();
     }
 
-    if (closeStarlessNB) { 
+    if (closeStarlessNB) {
         console.writeln("Cleaning up narrowband starless");
-        ToolParameters.nbStarlessView.window.forceClose(); 
+        ToolParameters.nbStarlessView.window.forceClose();
     }
 
     // Generate the plot
@@ -277,7 +272,7 @@ function continuumSubtract() {
         var maxY = yQuartiles[3] * 2.0 // Q3
 
         // Write trendline data file
-        var f = new File;
+        f = new File;
         f.createForWriting( trendFilepath );
         f.outTextLn("0 0");
         if (maxX/ratio < maxY) {
@@ -288,7 +283,7 @@ function continuumSubtract() {
         f.close();
 
         // Write gnuplot file
-        var f = new File;
+        f = new File;
         f.createForWriting( gnuFilepath );
         f.outTextLn( "set terminal svg size 600,600 enhanced font 'helvetica,12' background rgb 'white'" );
         f.outTextLn( "set title 'Broadband vs. Narrowband Flux' font 'helvetica,16'" );
@@ -347,7 +342,7 @@ function detectStars(sourceImage) {
     console.writeln("Stars detected: " + S.length);
     for (let i = 0; i < numStars; ++i) {
         stars.push([
-            0, 0, DynamicPSF.prototype.Star_DetectedOk, S[i].pos.x - radius,
+            0, 0, DynamicPSF.Star_DetectedOk, S[i].pos.x - radius,
             S[i].pos.y - radius,
             S[i].pos.x + radius, S[i].pos.y + radius,
             S[i].pos.x, S[i].pos.y
@@ -358,26 +353,24 @@ function detectStars(sourceImage) {
 
 function generatePSFs(sourceImage, starsList) {
     let P = new DynamicPSF;
-    with (P) {
-        views = [[sourceImage.id]];
-        astrometry = false;
-        autoAperture = true;
-        searchRadius = 2;
-        circularPSF = false;
-        autoPSF = false;
-        gaussianPSF = true;
-        moffatPSF = false;
-        moffat10PSF = false;
-        moffat8PSF = false;
-        moffat6PSF = false;
-        moffat4PSF = false;
-        moffat25PSF = false;
-        moffat15PSF = false;
-        lorentzianPSF = false;
-        variableShapePSF = false;
-        stars = starsList;
-        executeGlobal();
-    }
+    P.views = [[sourceImage.id]];
+    P.astrometry = false;
+    P.autoAperture = true;
+    P.searchRadius = 2;
+    P.circularPSF = false;
+    P.autoPSF = false;
+    P.gaussianPSF = true;
+    P.moffatPSF = false;
+    P.moffat10PSF = false;
+    P.moffat8PSF = false;
+    P.moffat6PSF = false;
+    P.moffat4PSF = false;
+    P.moffat25PSF = false;
+    P.moffat15PSF = false;
+    P.lorentzianPSF = false;
+    P.variableShapePSF = false;
+    P.stars = starsList;
+    P.executeGlobal();
 
     return P.psf;
 }
@@ -386,7 +379,7 @@ function generateValidID(id) {
     // Generate a new valid ID
     let iteration = 1;
     let newID = id + iteration;
-    if (View.viewById(id).isNull){
+    if (View.viewById(id) == null){
         return id;
     }
     while(!View.viewById(newID).isNull) {
@@ -407,19 +400,17 @@ function applyAstrometricSolution(id) {
     }
 }
 
-function subtractImage(img1, img2, scaleFactor, id) {
+function subtractImage(img1, img2, med_img, scaleFactor, id) {
     let P = new PixelMath;
-    P.expression = img1.id + "-("+img2.id+"-med("+img2.id+"))/"+scaleFactor;
-    with (P) {
-        useSingleExpression = true;
-        generateOutput = true;
-        optimization = true;
-        createNewImage = true;
-        showNewImage = true;
-        newImageId = id;
-        newImageColorSpace = PixelMath.prototype.Gray;
-        executeOn(img1);
-    }
+    P.expression = img1.id + "-("+img2.id+"-med("+med_img.id+"))/"+scaleFactor;
+    P.useSingleExpression = true;
+    P.generateOutput = true;
+    P.optimization = true;
+    P.createNewImage = true;
+    P.showNewImage = true;
+    P.newImageId = id;
+    P.newImageColorSpace = PixelMath.Gray;
+    P.executeOn(img1);
 }
 
 function median(arr) {
@@ -462,10 +453,11 @@ function removeStars(view) {
         case 1:
             try {
                 let P = new StarXTerminator;
+                P.ai_file = "StarXTerminator.11.pb";
                 P.stars = false;
                 P.unscreen = false;
                 P.overlap = 0.20;
-            
+
                 P.executeOn(view)
                 return true;
             } catch (e) {
@@ -477,17 +469,17 @@ function removeStars(view) {
         case 2:
             try {
                 var P = new StarNet2;
-                P.stride = StarNet2.prototype.defStride;
+                P.stride = StarNet2.defStride;
                 P.mask = false;
                 P.linear = true;
                 P.upsample = false;
                 P.shadows_clipping = -2.80;
                 P.target_background = 0.25;
-            
+
                 P.executeOn(view)
                 return true;
             } catch (e) {
-                console.criticalln("Could not remove stars from Image. Ensure that StarXTerminator is installed")
+                console.criticalln("Could not remove stars from Image. Ensure that StarNet2 is installed")
                 console.criticalln(e)
                 console.show();
                 return false;
@@ -501,7 +493,7 @@ function removeStars(view) {
 function cloneView(view, newId) {
     try {
         let newWindow = new ImageWindow(1, 1, 1, view.window.bitsPerSample, view.window.isFloatSample, view.image.isColor, newId);
-        newWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+        newWindow.mainView.beginProcess(UndoFlag.NoSwapFile);
         newWindow.mainView.image.assign(view.image);
         newWindow.mainView.endProcess();
         newWindow.mainView.stf = view.stf;
@@ -530,17 +522,17 @@ function run( program, maxRunningTimeSec )
       if ( n > 0 )
          console.writeln( "<end>\b" );
    }
-   if ( P.exitStatus == ProcessExitStatus_Crash || P.exitCode != 0 )
+   if ( P.exitStatus == ProcessExitStatus.Crash || P.exitCode != 0 )
    {
       var e = P.stderr;
-      throw new ParseError( "Process failed:\n" + program +
-                            ((e.length > 0) ? "\n" + e : ""), tokens, index );
+      throw new Error( "Process failed:\n" + program +
+                       ((e.length > 0) ? "\n" + e : "") );
    }
 }
 
-function MainDialog() {
-    this.__base__ = Dialog;
-    this.__base__();
+var MainDialog = class extends Dialog {
+constructor() {
+    super();
     var self = this;
 
     // Window parameters
@@ -556,22 +548,20 @@ function MainDialog() {
     // Description & Title
     // --------------------------------------------------------------
     this.label = new Label(this);
-    with (this.label) {
-        wordWrapping = true;
-        useRichText = true;
-        margin = 4;
-        // text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p><br></br>"
-        //     + "<p>Provide narrowband and broadband / continuum images as well as the starless images "
-        //     + "(optional) for subtraction. The script will generate an image for both the star-"
-        //     + "containing image, as well as the starless image if enabled.</p><br></br>"
-        //     + "<i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i>";
-        text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>Provide grayscale narrowband and broadband star-containing linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
-            + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images or enable a fallback star removal "
-            + "method to allow PCS to generate the intermediate starless images automatically. For images with severe stellar aberrations, it may be beneficial to run BlurX "
-            + "in correct only mode before using PCS.</p>"
-            + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
-    }
+    this.label.wordWrapping = true;
+    this.label.useRichText = true;
+    this.label.margin = 4;
+    // this.label.text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p><br></br>"
+    //     + "<p>Provide narrowband and broadband / continuum images as well as the starless images "
+    //     + "(optional) for subtraction. The script will generate an image for both the star-"
+    //     + "containing image, as well as the starless image if enabled.</p><br></br>"
+    //     + "<i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i>";
+    this.label.text = "<p><b>PhotometricContinuumSubtraction v" + VERSION + "</b> | Charles Hagen</p>"
+        + "<p>Provide grayscale narrowband and broadband star-containing linear images to compute the continuum subtraction weights and produce a continuum subtracted image. "
+        + "Optionally, you may also provide linear starless images to be subtracted using the weights computed from the star-containing images or enable a fallback star removal "
+        + "method to allow PCS to generate the intermediate starless images automatically. For images with severe stellar aberrations, it may be beneficial to run BlurX "
+        + "in correct only mode before using PCS.</p>"
+        + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
 
 
     // --------------------------------------------------------------
@@ -580,96 +570,75 @@ function MainDialog() {
 
     // Narrowband View Selector
     this.nbStarLabel = new Label(this);
-    with (this.nbStarLabel) {
-        text = "Narrowband:";
-        minWidth = labelWidth1;
-        maxWidth = labelWidth1;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.nbStarLabel.text = "Narrowband:";
+    this.nbStarLabel.minWidth = labelWidth1;
+    this.nbStarLabel.maxWidth = labelWidth1;
+    this.nbStarLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.nbStarViewList = new ViewList(this);
-    with (this.nbStarViewList) {
-        getMainViews();
-        onViewSelected = function (view) {
-            ToolParameters.nbStarView = view;
-        }
-        if (ToolParameters.nbStarView != undefined) {
-            currentView = ToolParameters.nbStarView;
-        }
+    this.nbStarViewList.getMainViews();
+    this.nbStarViewList.onViewSelected = function (view) {
+        ToolParameters.nbStarView = view;
+    };
+    if (ToolParameters.nbStarView != undefined && ToolParameters.nbStarView != null) {
+        this.nbStarViewList.currentView = ToolParameters.nbStarView;
     }
 
     this.nbStarSetActiveButton = new ToolButton(this);
-    with (this.nbStarSetActiveButton) {
-        icon = this.scaledResource(":/icons/select-view.png");
-        setScaledFixedSize(20, 20);
-        toolTip = "Set active window as target";
-        onClick = function () {
-            ToolParameters.nbStarView = ImageWindow.activeWindow.currentView;
-            self.nbStarViewList.currentView = ToolParameters.nbStarView;
-        }
-    }
+    this.nbStarSetActiveButton.icon = this.scaledResource(":/icons/select-view.png");
+    this.nbStarSetActiveButton.setScaledFixedSize(20, 20);
+    this.nbStarSetActiveButton.toolTip = "Set active window as target";
+    this.nbStarSetActiveButton.onClick = function () {
+        ToolParameters.nbStarView = ImageWindow.activeWindow.currentView;
+        self.nbStarViewList.currentView = ToolParameters.nbStarView;
+    };
 
     this.nbStarSizer = new HorizontalSizer(this);
-    with (this.nbStarSizer) {
-        margin = 6;
-        add(this.nbStarLabel, 1);
-        addSpacing(5);
-        add(this.nbStarViewList, 0);
-        addSpacing(5);
-        add(this.nbStarSetActiveButton, 1);
-    }
+    this.nbStarSizer.margin = 6;
+    this.nbStarSizer.add(this.nbStarLabel, 1);
+    this.nbStarSizer.addSpacing(5);
+    this.nbStarSizer.add(this.nbStarViewList, 0);
+    this.nbStarSizer.addSpacing(5);
+    this.nbStarSizer.add(this.nbStarSetActiveButton, 1);
 
     // Broadband View Selector
     this.bbStarLabel = new Label(this);
-    with (this.bbStarLabel) {
-        text = "Broadband:";
-        minWidth = labelWidth1;
-        maxWidth = labelWidth1;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.bbStarLabel.text = "Broadband:";
+    this.bbStarLabel.minWidth = labelWidth1;
+    this.bbStarLabel.maxWidth = labelWidth1;
+    this.bbStarLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.bbStarViewList = new ViewList(this);
-    with (this.bbStarViewList) {
-        getMainViews();
-        onViewSelected = function (view) {
-            ToolParameters.bbStarView = view;
-        }
-        if (ToolParameters.bbStarView != undefined) {
-            currentView = ToolParameters.bbStarView;
-        }
+    this.bbStarViewList.getMainViews();
+    this.bbStarViewList.onViewSelected = function (view) {
+        ToolParameters.bbStarView = view;
+    };
+    if (ToolParameters.bbStarView != undefined && ToolParameters.bbStarView != null) {
+        this.bbStarViewList.currentView = ToolParameters.bbStarView;
     }
 
     this.bbStarSetActiveButton = new ToolButton(this);
-    with (this.bbStarSetActiveButton) {
-        icon = this.scaledResource(":/icons/select-view.png");
-        setScaledFixedSize(20, 20);
-        toolTip = "Set active window as target";
-        onClick = function () {
-            ToolParameters.bbStarView = ImageWindow.activeWindow.currentView;
-            self.bbStarViewList.currentView = ToolParameters.bbStarView;
-        }
-    }
+    this.bbStarSetActiveButton.icon = this.scaledResource(":/icons/select-view.png");
+    this.bbStarSetActiveButton.setScaledFixedSize(20, 20);
+    this.bbStarSetActiveButton.toolTip = "Set active window as target";
+    this.bbStarSetActiveButton.onClick = function () {
+        ToolParameters.bbStarView = ImageWindow.activeWindow.currentView;
+        self.bbStarViewList.currentView = ToolParameters.bbStarView;
+    };
 
     this.bbStarSizer = new HorizontalSizer(this);
-    with (this.bbStarSizer) {
-        margin = 6;
-        add(this.bbStarLabel, 1);
-        addSpacing(5);
-        add(this.bbStarViewList, 0, Align_Expand);
-        addSpacing(5);
-        add(this.bbStarSetActiveButton, 1);
-    }
+    this.bbStarSizer.margin = 6;
+    this.bbStarSizer.add(this.bbStarLabel, 1);
+    this.bbStarSizer.addSpacing(5);
+    this.bbStarSizer.add(this.bbStarViewList, 0, Alignment.Expand);
+    this.bbStarSizer.addSpacing(5);
+    this.bbStarSizer.add(this.bbStarSetActiveButton, 1);
 
-    // Group Sizer
-    this.starGroup = new GroupBox(this)
-    with (this.starGroup) {
-        title = "Original Views";
-        sizer = new VerticalSizer;
-    }
-    with (this.starGroup.sizer) {
-        add(this.nbStarSizer);
-        add(this.bbStarSizer);
-    }
+    this.starGroup = new GroupBox(this);
+    this.starGroup.title = "Original Views";
+    this.starGroup.sizer = new VerticalSizer;
+    this.starGroup.sizer.add(this.nbStarSizer);
+    this.starGroup.sizer.add(this.bbStarSizer);
 
 
     // --------------------------------------------------------------
@@ -677,243 +646,195 @@ function MainDialog() {
     // --------------------------------------------------------------
 
     this.starXComboBox = new ComboBox(this);
-    with (this.starXComboBox) {
-        toolTip = "<p>If views are not provided, StarXTerminator (if present in your pixinsight installation) will be used to Generate starless images for the PCS routine.</p>";
-        addItem("<None>");
-        addItem("StarXTerminator");
-        addItem("StarNet V2");
-        currentItem = ToolParameters.starRemovalMethod;
-        maxWidth = this.font.width("StarXTerminator") + 40;
-        width = this.font.width("StarXTerminator") + 40;
-        onItemSelected = function (indx) {
-            ToolParameters.starRemovalMethod = indx;
-        }
-    }
+    this.starXComboBox.toolTip = "<p>If views are not provided, StarXTerminator (if present in your pixinsight installation) will be used to Generate starless images for the PCS routine.</p>";
+    this.starXComboBox.addItem("<None>");
+    this.starXComboBox.addItem("StarXTerminator");
+    this.starXComboBox.addItem("StarNet V2");
+    this.starXComboBox.currentItem = ToolParameters.starRemovalMethod;
+    this.starXComboBox.maxWidth = this.font.width("StarXTerminator") + 40;
+    this.starXComboBox.width = this.font.width("StarXTerminator") + 40;
+    this.starXComboBox.onItemSelected = function (indx) {
+        ToolParameters.starRemovalMethod = indx;
+    };
 
     this.starXLabel = new Label(this);
-    with (this.starXLabel) {
-        text = "Fallback:";
-        minWidth = labelWidth1;
-        maxWidth = labelWidth1;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.starXLabel.text = "Fallback:";
+    this.starXLabel.minWidth = labelWidth1;
+    this.starXLabel.maxWidth = labelWidth1;
+    this.starXLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.starXSizer = new HorizontalSizer(this);
-    with (this.starXSizer) {
-        margin = 6;
-        add(this.starXLabel);
-        addSpacing(5);
-        add(this.starXComboBox);
-        addStretch()
-    }
+    this.starXSizer.margin = 6;
+    this.starXSizer.add(this.starXLabel);
+    this.starXSizer.addSpacing(5);
+    this.starXSizer.add(this.starXComboBox);
+    this.starXSizer.addStretch();
 
     // Narrowband View Selector
     this.nbStarlessLabel = new Label(this);
-    with (this.nbStarlessLabel) {
-        text = "Narrowband:";
-        minWidth = labelWidth1;
-        maxWidth = labelWidth1;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.nbStarlessLabel.text = "Narrowband:";
+    this.nbStarlessLabel.minWidth = labelWidth1;
+    this.nbStarlessLabel.maxWidth = labelWidth1;
+    this.nbStarlessLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.nbStarlessViewList = new ViewList(this);
-    with (this.nbStarlessViewList) {
-        getMainViews();
-        onViewSelected = function (view) {
-            ToolParameters.nbStarlessView = view;
-        }
-        if (ToolParameters.nbStarlessView != undefined) {
-            currentView = ToolParameters.nbStarlessView;
-        }
+    this.nbStarlessViewList.getMainViews();
+    this.nbStarlessViewList.onViewSelected = function (view) {
+        ToolParameters.nbStarlessView = view;
+    };
+    if (ToolParameters.nbStarlessView != undefined && ToolParameters.nbStarlessView != null) {
+        this.nbStarlessViewList.currentView = ToolParameters.nbStarlessView;
     }
 
     this.nbStarlessSetActiveButton = new ToolButton(this);
-    with (this.nbStarlessSetActiveButton) {
-        icon = this.scaledResource(":/icons/select-view.png");
-        setScaledFixedSize(20, 20);
-        toolTip = "Set active window as target";
-        onClick = function () {
-            ToolParameters.nbStarlessView = ImageWindow.activeWindow.currentView;
-            self.nbStarlessViewList.currentView = ToolParameters.nbStarlessView;
-        }
-    }
+    this.nbStarlessSetActiveButton.icon = this.scaledResource(":/icons/select-view.png");
+    this.nbStarlessSetActiveButton.setScaledFixedSize(20, 20);
+    this.nbStarlessSetActiveButton.toolTip = "Set active window as target";
+    this.nbStarlessSetActiveButton.onClick = function () {
+        ToolParameters.nbStarlessView = ImageWindow.activeWindow.currentView;
+        self.nbStarlessViewList.currentView = ToolParameters.nbStarlessView;
+    };
 
     this.nbStarlessSizer = new HorizontalSizer(this);
-    with (this.nbStarlessSizer) {
-        margin = 6;
-        add(this.nbStarlessLabel);
-        addSpacing(5);
-        add(this.nbStarlessViewList);
-        addSpacing(5);
-        add(this.nbStarlessSetActiveButton);
-    }
+    this.nbStarlessSizer.margin = 6;
+    this.nbStarlessSizer.add(this.nbStarlessLabel);
+    this.nbStarlessSizer.addSpacing(5);
+    this.nbStarlessSizer.add(this.nbStarlessViewList);
+    this.nbStarlessSizer.addSpacing(5);
+    this.nbStarlessSizer.add(this.nbStarlessSetActiveButton);
 
     // Broadband View Selector
     this.bbStarlessLabel = new Label(this);
-    with (this.bbStarlessLabel) {
-        text = "Broadband:";
-        minWidth = labelWidth1;
-        maxWidth = labelWidth1;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.bbStarlessLabel.text = "Broadband:";
+    this.bbStarlessLabel.minWidth = labelWidth1;
+    this.bbStarlessLabel.maxWidth = labelWidth1;
+    this.bbStarlessLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.bbStarlessViewList = new ViewList(this);
-    with (this.bbStarlessViewList) {
-        getMainViews();
-        onViewSelected = function (view) {
-            ToolParameters.bbStarlessView = view;
-        }
-        if (ToolParameters.bbStarlessView != undefined) {
-            currentView = ToolParameters.bbStarlessView;
-        }
+    this.bbStarlessViewList.getMainViews();
+    this.bbStarlessViewList.onViewSelected = function (view) {
+        ToolParameters.bbStarlessView = view;
+    };
+    if (ToolParameters.bbStarlessView != undefined && ToolParameters.bbStarlessView != null) {
+        this.bbStarlessViewList.currentView = ToolParameters.bbStarlessView;
     }
 
     this.bbStarlessSetActiveButton = new ToolButton(this);
-    with (this.bbStarlessSetActiveButton) {
-        icon = this.scaledResource(":/icons/select-view.png");
-        setScaledFixedSize(20, 20);
-        toolTip = "Set active window as target";
-        onClick = function () {
-            ToolParameters.bbStarlessView = ImageWindow.activeWindow.currentView;
-            self.bbStarlessViewList.currentView = ToolParameters.bbStarlessView;
-        }
-    }
+    this.bbStarlessSetActiveButton.icon = this.scaledResource(":/icons/select-view.png");
+    this.bbStarlessSetActiveButton.setScaledFixedSize(20, 20);
+    this.bbStarlessSetActiveButton.toolTip = "Set active window as target";
+    this.bbStarlessSetActiveButton.onClick = function () {
+        ToolParameters.bbStarlessView = ImageWindow.activeWindow.currentView;
+        self.bbStarlessViewList.currentView = ToolParameters.bbStarlessView;
+    };
 
     this.bbStarlessSizer = new HorizontalSizer(this);
-    with (this.bbStarlessSizer) {
-        margin = 6;
-        add(this.bbStarlessLabel);
-        addSpacing(5);
-        add(this.bbStarlessViewList);
-        addSpacing(5);
-        add(this.bbStarlessSetActiveButton);
-    }
+    this.bbStarlessSizer.margin = 6;
+    this.bbStarlessSizer.add(this.bbStarlessLabel);
+    this.bbStarlessSizer.addSpacing(5);
+    this.bbStarlessSizer.add(this.bbStarlessViewList);
+    this.bbStarlessSizer.addSpacing(5);
+    this.bbStarlessSizer.add(this.bbStarlessSetActiveButton);
 
     // Group Sizer
-    this.starlessGroup = new GroupBox(this)
-    with (this.starlessGroup) {
-        toolTip = "<p> Generate starless subtracted image.</p>"
-        titleCheckBox = true;
-        checked = ToolParameters.starlessEnabled;
-        onCheck = function () {
-            ToolParameters.starlessEnabled = checked;
-        }
-        title = "Generate Starless";
-        sizer = new VerticalSizer;
-    }
-    with (this.starlessGroup.sizer) {
-        add(this.nbStarlessSizer);
-        add(this.bbStarlessSizer);
-        add(this.starXSizer);
-    }
+    this.starlessGroup = new GroupBox(this);
+    this.starlessGroup.toolTip = "<p> Generate starless subtracted image.</p>";
+    this.starlessGroup.titleCheckBox = true;
+    this.starlessGroup.checked = ToolParameters.starlessEnabled;
+    this.starlessGroup.onCheck = function () {
+        ToolParameters.starlessEnabled = this.checked;
+    };
+    this.starlessGroup.title = "Generate Starless";
+    this.starlessGroup.sizer = new VerticalSizer;
+    this.starlessGroup.sizer.add(this.nbStarlessSizer);
+    this.starlessGroup.sizer.add(this.bbStarlessSizer);
+    this.starlessGroup.sizer.add(this.starXSizer);
 
     // --------------------------------------------------------------
     // Settings
     // --------------------------------------------------------------
 
     this.maxStarsLabel = new Label(this);
-    with (this.maxStarsLabel) {
-        text = "Maximum Stars: ";
-        minWidth = labelWidth2;
-        maxWidth = labelWidth2;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.maxStarsLabel.text = "Maximum Stars: ";
+    this.maxStarsLabel.minWidth = labelWidth2;
+    this.maxStarsLabel.maxWidth = labelWidth2;
+    this.maxStarsLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.maxStars = new NumericControl(this);
-    with (this.maxStars) {
-        toolTip = "<p> This field controls the maximum number of stars that will be included in the calculation, "+
+    this.maxStars.toolTip = "<p> This field controls the maximum number of stars that will be included in the calculation, "+
         "higher values will include more stars which will take longer, but may provide more accurate results."+
-        "<p>Default value is 400 stars</p>"
-        setPrecision(2);
-        setRange(50, 1000);
-        setReal(true);
-        slider.stepSize = 0.1;
-        slider.setRange(0, 19);
-        setValue(ToolParameters.maxStars);
-        onValueUpdated = function (value) {
-            ToolParameters.maxStars = value;
-        }
-    }
+        "<p>Default value is 400 stars</p>";
+    this.maxStars.setPrecision(2);
+    this.maxStars.setRange(50, 1000);
+    this.maxStars.setReal(true);
+    this.maxStars.slider.stepSize = 0.1;
+    this.maxStars.slider.setRange(0, 19);
+    this.maxStars.setValue(ToolParameters.maxStars);
+    this.maxStars.onValueUpdated = function (value) {
+        ToolParameters.maxStars = value;
+    };
 
     this.maxStarsSizer = new HorizontalSizer(this);
-    with (this.maxStarsSizer) {
-        margin = 6;
-        add(this.maxStarsLabel, 1);
-        add(this.maxStars, 0);
-    }
+    this.maxStarsSizer.margin = 6;
+    this.maxStarsSizer.add(this.maxStarsLabel, 1);
+    this.maxStarsSizer.add(this.maxStars, 0);
 
     this.maxPeakLabel = new Label(this);
-    with (this.maxPeakLabel) {
-        text = "Maximum Peak: ";
-        minWidth = labelWidth2;
-        maxWidth = labelWidth2;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.maxPeakLabel.text = "Maximum Peak: ";
+    this.maxPeakLabel.minWidth = labelWidth2;
+    this.maxPeakLabel.maxWidth = labelWidth2;
+    this.maxPeakLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.maxPeak = new NumericControl(this);
-    with (this.maxPeak) {
-        toolTip = "<p> This field controls the maximum peak value that a star can have to be included in the flux calculation, "+
+    this.maxPeak.toolTip = "<p> This field controls the maximum peak value that a star can have to be included in the flux calculation, "+
         "higher values will be more tolerant of brighter stars and may begin to include saturated stars, which can degrade "+
         "the performance of the routine.</p>" +
-        "<p>Default value is 0.8</p>"
-        setPrecision(2);
-        setRange(0, 1);
-        setReal(true);
-        slider.stepSize = 0.1;
-        slider.setRange(0, 10);
-        setValue(ToolParameters.maxPeak);
-        onValueUpdated = function (value) {
-            ToolParameters.maxPeak = value;
-        }
-    }
+        "<p>Default value is 0.8</p>";
+    this.maxPeak.setPrecision(2);
+    this.maxPeak.setRange(0, 1);
+    this.maxPeak.setReal(true);
+    this.maxPeak.slider.stepSize = 0.1;
+    this.maxPeak.slider.setRange(0, 10);
+    this.maxPeak.setValue(ToolParameters.maxPeak);
+    this.maxPeak.onValueUpdated = function (value) {
+        ToolParameters.maxPeak = value;
+    };
 
     this.maxPeakSizer = new HorizontalSizer(this);
-    with (this.maxPeakSizer) {
-        margin = 6;
-        add(this.maxPeakLabel, 1);
-        add(this.maxPeak, 0);
-    }
+    this.maxPeakSizer.margin = 6;
+    this.maxPeakSizer.add(this.maxPeakLabel, 1);
+    this.maxPeakSizer.add(this.maxPeak, 0);
 
     this.generatePlotLabel = new Label(this);
-    with (this.generatePlotLabel) {
-        toolTip = "<p>Plot narrowband flux vs. broadband flux. This can be useful for verifying the calculated fit and troubleshooting in the "+
+    this.generatePlotLabel.toolTip = "<p>Plot narrowband flux vs. broadband flux. This can be useful for verifying the calculated fit and troubleshooting in the "+
         "event of poor subtraction. If the curve is non-linear, consider increasing the maximum number of stars.</p>";
-        text = "Generate Plot: ";
-        minWidth = labelWidth2;
-        maxWidth = labelWidth2;
-        textAlignment = TextAlign_Right | TextAlign_VertCenter;
-    }
+    this.generatePlotLabel.text = "Generate Plot: ";
+    this.generatePlotLabel.minWidth = labelWidth2;
+    this.generatePlotLabel.maxWidth = labelWidth2;
+    this.generatePlotLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
 
     this.generatePlotCheckBox = new CheckBox(this);
-    with (this.generatePlotCheckBox) {
-        toolTip = "<p>Plot narrowband flux vs. broadband flux. This can be useful for verifying the calculated fit and troubleshooting in the "+
+    this.generatePlotCheckBox.toolTip = "<p>Plot narrowband flux vs. broadband flux. This can be useful for verifying the calculated fit and troubleshooting in the "+
         "event of poor subtraction. If the curve is non-linear, consider increasing the maximum number of stars.</p>";
-        checked = ToolParameters.generatePlot
-        // text = "Generate Plot";
-        onCheck = function () {
-            ToolParameters.generatePlot = checked;
-        }
-    }
+    this.generatePlotCheckBox.checked = ToolParameters.generatePlot;
+    // this.generatePlotCheckBox.text = "Generate Plot";
+    this.generatePlotCheckBox.onCheck = function () {
+        ToolParameters.generatePlot = this.checked;
+    };
 
     this.generatePlotSizer = new HorizontalSizer(this);
-    with (this.generatePlotSizer) {
-        margin = 6;
-        add(this.generatePlotLabel, 1);
-        addSpacing(10);
-        add(this.generatePlotCheckBox, 0);
-    }
+    this.generatePlotSizer.margin = 6;
+    this.generatePlotSizer.add(this.generatePlotLabel, 1);
+    this.generatePlotSizer.addSpacing(10);
+    this.generatePlotSizer.add(this.generatePlotCheckBox, 0);
 
     // Group Sizer
-    this.settingsGroup = new GroupBox(this)
-    with (this.settingsGroup) {
-        title = "Settings";
-        sizer = new VerticalSizer;
-    }
-    with (this.settingsGroup.sizer) {
-        add(this.maxStarsSizer);
-        add(this.maxPeakSizer);
-        add(this.generatePlotSizer);
-    }
+    this.settingsGroup = new GroupBox(this);
+    this.settingsGroup.title = "Settings";
+    this.settingsGroup.sizer = new VerticalSizer;
+    this.settingsGroup.sizer.add(this.maxStarsSizer);
+    this.settingsGroup.sizer.add(this.maxPeakSizer);
+    this.settingsGroup.sizer.add(this.generatePlotSizer);
 
 
     // --------------------------------------------------------------
@@ -921,76 +842,63 @@ function MainDialog() {
     // --------------------------------------------------------------
 
     this.newInstanceButton = new ToolButton(this);
-    with (this.newInstanceButton) {
-        icon = this.scaledResource(":/process-interface/new-instance.png");
-        setScaledFixedSize(20, 20);
-        toolTip = "New Instance";
-        onMousePress = function () {
-            this.hasFocus = true;
-            ToolParameters.save();
-
-            this.pushed = false;
-            this.dialog.newInstance();
-        };
-    }
+    this.newInstanceButton.icon = this.scaledResource(":/process-interface/new-instance.png");
+    this.newInstanceButton.setScaledFixedSize(20, 20);
+    this.newInstanceButton.toolTip = "New Instance";
+    this.newInstanceButton.onMousePress = function () {
+        this.hasFocus = true;
+        ToolParameters.save();
+        this.pushed = false;
+        this.dialog.newInstance();
+    };
 
     this.docs_Button = new ToolButton(this);
-    with (this.docs_Button) {
-       text = "Docs";
-       icon = this.scaledResource(":/process-explorer/browse-documentation.png");
-       onClick = function () {
-          Dialog.openBrowser("https://nightphotons.com/software/photometric-continuum-subtraction/");
-       };
-    }
+    this.docs_Button.text = "Docs";
+    this.docs_Button.icon = this.scaledResource(":/process-explorer/browse-documentation.png");
+    this.docs_Button.onClick = function () {
+        Dialog.openBrowser("https://nightphotons.com/software/photometric-continuum-subtraction/");
+    };
 
     this.ok_Button = new PushButton(this);
-    with (this.ok_Button) {
-        text = "Execute";
-        icon = this.scaledResource(":/icons/ok.png");
-        onClick = function () {
-            this.dialog.ok();
-        };
-    }
+    this.ok_Button.text = "Execute";
+    this.ok_Button.icon = this.scaledResource(":/icons/ok.png");
+    this.ok_Button.onClick = function () {
+        this.dialog.ok();
+    };
 
     this.cancel_Button = new PushButton(this);
-    with (this.cancel_Button) {
-        text = "Cancel";
-        icon = this.scaledResource(":/icons/cancel.png");
-        onClick = function () {
-            this.dialog.cancel();
-        };
-    }
+    this.cancel_Button.text = "Cancel";
+    this.cancel_Button.icon = this.scaledResource(":/icons/cancel.png");
+    this.cancel_Button.onClick = function () {
+        this.dialog.cancel();
+    };
 
     this.buttons_Sizer = new HorizontalSizer;
-    with (this.buttons_Sizer) {
-        scaledSpacing = 6;
-        add(this.newInstanceButton);
-        add(this.docs_Button);
-        addStretch();
-        add(this.ok_Button);
-        add(this.cancel_Button);
-    }
+    this.buttons_Sizer.scaledSpacing = 6;
+    this.buttons_Sizer.add(this.newInstanceButton);
+    this.buttons_Sizer.add(this.docs_Button);
+    this.buttons_Sizer.addStretch();
+    this.buttons_Sizer.add(this.ok_Button);
+    this.buttons_Sizer.add(this.cancel_Button);
 
     // --------------------------------------------------------------
     // Global Sizer
     // --------------------------------------------------------------
     this.sizer = new VerticalSizer(this);
-    with (this.sizer) {
-        margin = 6;
-        spacing = 4;
-        add(this.label);
-        addSpacing(4);
-        add(this.starGroup);
-        addSpacing(4);
-        add(this.starlessGroup);
-        addSpacing(4);
-        add(this.settingsGroup);
-        addSpacing(4);
-        addStretch();
-        add(this.buttons_Sizer);
-    }
+    this.sizer.margin = 6;
+    this.sizer.spacing = 4;
+    this.sizer.add(this.label);
+    this.sizer.addSpacing(4);
+    this.sizer.add(this.starGroup);
+    this.sizer.addSpacing(4);
+    this.sizer.add(this.starlessGroup);
+    this.sizer.addSpacing(4);
+    this.sizer.add(this.settingsGroup);
+    this.sizer.addSpacing(4);
+    this.sizer.addStretch();
+    this.sizer.add(this.buttons_Sizer);
 }
-MainDialog.prototype = new Dialog;
+}; // end class MainDialog
 
 function showDialog() {
     let dialog = new MainDialog;
