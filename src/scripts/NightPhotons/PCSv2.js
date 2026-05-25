@@ -17,6 +17,7 @@ var ToolParameters = {
     maxStars:          400,
     maxPeak:           0.8,
     generatePlot:      true,
+    keepComposite:     false,
 
     save: function () {
         if (ToolParameters.nbStarView != null && ToolParameters.nbStarView != undefined) {
@@ -35,6 +36,7 @@ var ToolParameters = {
         Parameters.set("MaximumStars",       ToolParameters.maxStars);
         Parameters.set("MaximumPeak",        ToolParameters.maxPeak);
         Parameters.set("GeneratePlot",       ToolParameters.generatePlot);
+        Parameters.set("KeepComposite",      ToolParameters.keepComposite);
     },
 
     load: function () {
@@ -61,6 +63,7 @@ var ToolParameters = {
         if (Parameters.has("MaximumStars"))      ToolParameters.maxStars           = Parameters.getInteger("MaximumStars");
         if (Parameters.has("MaximumPeak"))       ToolParameters.maxPeak            = Parameters.getReal("MaximumPeak");
         if (Parameters.has("GeneratePlot"))      ToolParameters.generatePlot       = Parameters.getBoolean("GeneratePlot");
+        if (Parameters.has("KeepComposite"))     ToolParameters.keepComposite      = Parameters.getBoolean("KeepComposite");
     }
 };
 
@@ -198,7 +201,7 @@ function optimizeWeights(bbFluxes, nbFluxes) {
 // continuumSubtract
 // ---------------------------------------------------------------------------
 function continuumSubtract() {
-    // --- Input validation ---
+    // Input validation
     if (ToolParameters.nbStarView == null || ToolParameters.nbStarView == undefined) {
         console.criticalln("Error: Narrowband image is not defined.");
         console.show(); return;
@@ -226,18 +229,18 @@ function continuumSubtract() {
     let bbStarViews = ToolParameters.bbChannels.map(ch => ch.starView);
     let nChannels   = bbStarViews.length;
 
-    // --- Star detection (on primary broadband channel) ---
+    // Star detection (on primary broadband channel)
     let stars = detectStars(bbStarViews[0].image);
     if (stars.length === 0) {
         console.criticalln("Error: No stars detected. Try adjusting the maximum star peak parameter.");
         console.show(); return;
     }
 
-    // --- PSF fitting ---
+    // PSF fitting 
     let narrowbandPSF = generatePSFs(ToolParameters.nbStarView, stars);
     let bbPSFs = bbStarViews.map(v => generatePSFs(v, stars));
 
-    // --- Assemble per-star flux arrays ---
+    // Assemble per-star flux arrays
     let nStars       = stars.length;
     let nbFluxByIdx  = new Array(nStars).fill(null);
     let bbFluxByIdx  = [];
@@ -266,7 +269,7 @@ function continuumSubtract() {
     if (validNB.length < 50)
         console.warningln("Warning: Only " + validNB.length + " valid star sets found. Results may be inaccurate.");
 
-    // --- Optimise weights ---
+    // Optimise weights 
     console.writeln("Optimising broadband channel weights (" + nChannels + " channel" + (nChannels > 1 ? "s" : "") + ")...");
     let optResult = optimizeWeights(validBB, validNB);
     let weights   = optResult.weights;
@@ -278,7 +281,7 @@ function continuumSubtract() {
     console.noteln(format("  Scale factor k = %.6f  (NB ≈ k · composite_BB)", scale));
 
     let compositeExpr = buildCompositeExpression(bbStarViews, weights);
-    let compBBId      = generateValidID("pcs_bb_composite");
+    let compBBId      = generateValidID("composite_bb_" + ToolParameters.nbStarView.id);
     let Pcomp         = new PixelMath;
     Pcomp.expression          = compositeExpr;
     Pcomp.useSingleExpression = true;
@@ -296,7 +299,7 @@ function continuumSubtract() {
     }
     console.noteln("Composite broadband image created: " + compBBId);
 
-    let tempViews = [compBBView]; // collect all intermediates for cleanup
+    let tempViews = []; // collect all intermediates for cleanup (compBBView handled separately)
 
     // Star-containing subtraction
     let starSubExpr = ToolParameters.nbStarView.id +
@@ -344,6 +347,21 @@ function continuumSubtract() {
     for (let v of tempViews) {
         console.writeln("Cleaning up: " + v.id);
         v.window.forceClose();
+    }
+
+    // Keep or discard the composite broadband image
+    if (ToolParameters.keepComposite) {
+        let Pscale = new PixelMath;
+        Pscale.expression         = compBBView.id + "*" + format("%.6f", scale);
+        Pscale.useSingleExpression = true;
+        Pscale.generateOutput      = true;
+        Pscale.optimization        = true;
+        Pscale.createNewImage      = false;
+        Pscale.executeOn(compBBView);
+        compBBView.window.show();
+        console.noteln("Composite broadband image kept: " + compBBView.id);
+    } else {
+        compBBView.window.forceClose();
     }
 
     // Diagnostic plot
@@ -580,7 +598,7 @@ constructor() {
 
     this.windowTitle = TITLE;
     var labelWidth1 = this.font.width("Narrowband:") + 8;
-    var labelWidth2 = this.font.width("Maximum Stars: ");
+    var labelWidth2 = this.font.width("Keep Composite: ");
     this.width = 500;
 
     // --------------------------------------------------------------
@@ -842,12 +860,36 @@ constructor() {
     this.generatePlotSizer.addSpacing(10);
     this.generatePlotSizer.add(this.generatePlotCheckBox, 0);
 
+    this.keepCompositeLabel = new Label(this);
+    this.keepCompositeLabel.text          = "Keep Composite: ";
+    this.keepCompositeLabel.minWidth      = labelWidth2;
+    this.keepCompositeLabel.maxWidth      = labelWidth2;
+    this.keepCompositeLabel.textAlignment = TextAlignment.Right | TextAlignment.VertCenter;
+    this.keepCompositeLabel.toolTip = "<p>Keep and show the weighted composite broadband image after processing. " +
+        "The composite is scaled by the regression factor k so its stellar flux matches the narrowband image. " +
+        "This is useful if you want to apply a different or unsupported star removal process to either image. " +
+        "It is named <i>composite_bb_&lt;nb&gt;</i>.</p>" + 
+        "<p>This can be subtracted from the nb image in PixelMath using " +
+        "<i>&lt;nb&gt; - (composite - med(composite))</i></p>";
+
+    this.keepCompositeCheckBox = new CheckBox(this);
+    this.keepCompositeCheckBox.toolTip = this.keepCompositeLabel.toolTip;
+    this.keepCompositeCheckBox.checked = ToolParameters.keepComposite;
+    this.keepCompositeCheckBox.onCheck = function () { ToolParameters.keepComposite = this.checked; };
+
+    this.keepCompositeSizer = new HorizontalSizer(this);
+    this.keepCompositeSizer.margin = 6;
+    this.keepCompositeSizer.add(this.keepCompositeLabel, 1);
+    this.keepCompositeSizer.addSpacing(10);
+    this.keepCompositeSizer.add(this.keepCompositeCheckBox, 0);
+
     this.settingsGroup = new GroupBox(this);
     this.settingsGroup.title = "Settings";
     this.settingsGroup.sizer = new VerticalSizer;
     this.settingsGroup.sizer.add(this.maxStarsSizer);
     this.settingsGroup.sizer.add(this.maxPeakSizer);
     this.settingsGroup.sizer.add(this.generatePlotSizer);
+    this.settingsGroup.sizer.add(this.keepCompositeSizer);
 
     // ------------------------------------------------------------------
     // Bottom buttons
