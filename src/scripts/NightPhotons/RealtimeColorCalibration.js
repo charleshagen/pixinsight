@@ -1,6 +1,7 @@
 #engine v8
 
 #feature-id    RealtimeColorCalibration : NightPhotons > RealtimeColorCalibration
+#feature-icon  @script_icons_dir/RealtimeColorCalibration.svg
 #feature-info  An interactive image preview with adjustable white balance, stretch, and saturation.
 
 CoreApplication.ensureMinimumVersion( 1, 9, 4 );
@@ -27,6 +28,7 @@ var MainDialog = class extends Dialog {
         this.applySTF = true;
         this.midtones = 0.5;
         this.saturation = 1.0;
+        this.neutralizeBg = false;
 
         this.debounceTimer = new Timer(0.4, false);
         this.debounceTimer.onTimeout = function () { dlg.updatePreview(); };
@@ -173,6 +175,16 @@ var MainDialog = class extends Dialog {
             dlg.debouncedUpdate();
         };
 
+        this.neutralizeBg_Check = new CheckBox(this);
+        this.neutralizeBg_Check.text = "Neutralize Background";
+        this.neutralizeBg_Check.checked = false;
+        this.neutralizeBg_Check.toolTip = "<p>When enabled, all channels add back the minimum of the three "
+            + "reference channel medians instead of each channel's own median, neutralizing the background color.</p>";
+        this.neutralizeBg_Check.onCheck = function (checked) {
+            dlg.neutralizeBg = checked;
+            dlg.debouncedUpdate();
+        };
+
         this.wb_Group = new GroupBox(this);
         this.wb_Group.title = "White Balance";
         this.wb_Group.sizer = new VerticalSizer;
@@ -181,6 +193,7 @@ var MainDialog = class extends Dialog {
         this.wb_Group.sizer.add(this.red_Control);
         this.wb_Group.sizer.add(this.green_Control);
         this.wb_Group.sizer.add(this.blue_Control);
+        this.wb_Group.sizer.add(this.neutralizeBg_Check);
 
         // Stretch Group
         this.applySTF_Check = new CheckBox(this);
@@ -251,9 +264,9 @@ var MainDialog = class extends Dialog {
         this.apply_Button = new PushButton(this);
         this.apply_Button.text = "Apply";
         this.apply_Button.icon = this.scaledResource(":/icons/ok.png");
-        this.apply_Button.toolTip = "<p>Apply the white balance to the source view. "
+        this.apply_Button.toolTip = "<p>Apply the white balance and background neutralization to the source view. "
             + "STF, midtones, and saturation are not applied. "
-            + "Sliders reset to neutral afterward.</p>";
+            + "White balance sliders reset to neutral afterward.</p>";
         this.apply_Button.onClick = function () { dlg.applyWhiteBalance(); };
 
         this.refresh_Button = new PushButton(this);
@@ -312,10 +325,15 @@ var MainDialog = class extends Dialog {
             let medG    = (nRefCh > 1) ? refImg.median(refRect, 1, 1) : medR;
             let medB    = (nRefCh > 2) ? refImg.median(refRect, 2, 2) : medR;
 
+            let addBack = this.neutralizeBg ? Math.min(medR, medG, medB) : null;
+            let addR = addBack !== null ? addBack : medR;
+            let addG = addBack !== null ? addBack : medG;
+            let addB = addBack !== null ? addBack : medB;
+
             let pm = new PixelMath;
-            pm.expression0         = format("($T - %.6f)*%.6f + %.6f", medR, this.rWeight, medR);
-            pm.expression1         = format("($T - %.6f)*%.6f + %.6f", medG, this.gWeight, medG);
-            pm.expression2         = format("($T - %.6f)*%.6f + %.6f", medB, this.bWeight, medB);
+            pm.expression0         = format("($T - %.6f)*%.6f + %.6f", medR, this.rWeight, addR);
+            pm.expression1         = format("($T - %.6f)*%.6f + %.6f", medG, this.gWeight, addG);
+            pm.expression2         = format("($T - %.6f)*%.6f + %.6f", medB, this.bWeight, addB);
             pm.useSingleExpression = false;
             pm.generateOutput      = true;
             pm.optimization        = true;
@@ -345,12 +363,12 @@ var MainDialog = class extends Dialog {
                 tempView.endProcess();
 
                 // White balance
-                if (img.isColor && (this.rWeight !== 1.0 || this.gWeight !== 1.0 || this.bWeight !== 1.0))
+                if (img.isColor && (this.rWeight !== 1.0 || this.gWeight !== 1.0 || this.bWeight !== 1.0) || this.neutralizeBg)
                     this.executeWhiteBalance(tempView);
 
                 // Linked STF stretch
                 if (this.applySTF) {
-                    let statsImg = view.image;
+                    let statsImg = tempView.image;
                     let rect = new Rect(0, 0, statsImg.width, statsImg.height);
                     let nch = statsImg.isColor ? 3 : 1;
                     let totalMed = 0, totalMad = 0;
@@ -390,7 +408,7 @@ var MainDialog = class extends Dialog {
                     let xClip = 1.0 / s;
                     let curves = new CurvesTransformation;
                     curves.c = [[0, 0], [xClip, 1.0], [1.0, 1.0]];
-                    curves.ct = 0; // Linear interpolation
+                    curves.ct = CurvesTransformation.Linear;
                     curves.executeOn(tempView);
                 }
 
