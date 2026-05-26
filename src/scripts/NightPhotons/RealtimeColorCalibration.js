@@ -30,10 +30,19 @@ var MainDialog = class extends Dialog {
         this.saturation = 1.0;
         this.neutralizeBg = true;
 
+        this._renderPending = false;
+        this._renderGen = 0;
+
         this.debounceTimer = new Timer(0.4, false);
-        this.debounceTimer.onTimeout = function () { dlg.updatePreview(); };
+        this.debounceTimer.onTimeout = function () {
+            if (!dlg._renderPending) return;
+            dlg._renderPending = false;
+            dlg.updatePreview();
+        };
 
         this.debouncedUpdate = function () {
+            this._renderPending = true;
+            this._renderGen++;
             this.debounceTimer.stop();
             this.debounceTimer.start();
         };
@@ -68,9 +77,10 @@ var MainDialog = class extends Dialog {
         this.label.useRichText = true;
         this.label.margin = 4;
         this.label.text = "<p><b>" + TITLE + " v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>Provide a primary image view and a reference image or preview to apply manual color calibration with a realtime "
-            + "preview, stf stretch, midtones transform, and saturation. Once the adjustments are complete, press the Apply button "
-            + "to apply only the white balance and background neutralization to the target image.</p>"
+            + "<p>Provide a primary image or preview and a background reference image or preview to apply manual color calibration with "
+            + "a real-time preview, stf stretch, midtones transform, and saturation. If no background reference is provided, the median "
+            + "of the primary image will be used as the black point. Once the adjustments are complete, press the Apply button to apply "
+            + "only the white balance and background neutralization to the target image.</p>"
             + "<p><i>Create a process icon with the new instance button to launch the dialog on the active image.</i></p>";
 
         // Views Group
@@ -237,8 +247,7 @@ var MainDialog = class extends Dialog {
         this.sat_Control.setPrecision(2);
         this.sat_Control.setValue(this.saturation);
         this.sat_Control.slider.setRange(0, 150);
-        this.sat_Control.toolTip = "<p>CIE c* (chroma) boost applied via CurvesTransformation. "
-            + "1.0 = unchanged; 2.5 = curve with slope of 2.5 on the chroma channel.</p>";
+        this.sat_Control.toolTip = "<p>Slope of the CIE c* (chroma) curve applied via CurvesTransformation.</p>";
         this.sat_Control.onValueUpdated = function (value) {
             dlg.saturation = value;
             dlg.debouncedUpdate();
@@ -297,23 +306,23 @@ var MainDialog = class extends Dialog {
         this.buttons_Sizer.add(this.refresh_Button);
         this.buttons_Sizer.add(this.close_Button);
 
-        // Right panel sizer
-        this.right_Sizer = new VerticalSizer;
-        this.right_Sizer.spacing = 6;
-        this.right_Sizer.add(this.label);
-        this.right_Sizer.add(this.views_Group);
-        this.right_Sizer.add(this.wb_Group);
-        this.right_Sizer.add(this.stretch_Group);
-        this.right_Sizer.add(this.sat_Group);
-        this.right_Sizer.addStretch();
-        this.right_Sizer.add(this.buttons_Sizer);
+        // Left panel sizer
+        this.left_Sizer = new VerticalSizer;
+        this.left_Sizer.spacing = 6;
+        this.left_Sizer.add(this.label);
+        this.left_Sizer.add(this.views_Group);
+        this.left_Sizer.add(this.wb_Group);
+        this.left_Sizer.add(this.stretch_Group);
+        this.left_Sizer.add(this.sat_Group);
+        this.left_Sizer.addStretch();
+        this.left_Sizer.add(this.buttons_Sizer);
 
         // Full dialog sizer
         this.sizer = new HorizontalSizer;
         this.sizer.margin = 8;
         this.sizer.spacing = 8;
-        this.sizer.add(this.preview_Group, 100);
-        this.sizer.add(this.right_Sizer);
+        this.sizer.add(this.left_Sizer);
+        this.sizer.add(this.preview_Group, 120);
 
         this.ensureLayoutUpdated();
         this.resize(this.logicalPixelsToPhysical(1400), this.logicalPixelsToPhysical(900));
@@ -352,6 +361,7 @@ var MainDialog = class extends Dialog {
             if (!view || view.isNull || view.image.isEmpty)
                 return;
 
+            let gen = this._renderGen;
             let img = view.image;
             let tempWindow = null;
 
@@ -364,9 +374,13 @@ var MainDialog = class extends Dialog {
                 tempView.image.assign(img);
                 tempView.endProcess();
 
+                if (this._renderGen !== gen) return;
+
                 // White balance
                 if (img.isColor && (this.rWeight !== 1.0 || this.gWeight !== 1.0 || this.bWeight !== 1.0) || this.neutralizeBg)
                     this.executeWhiteBalance(tempView);
+
+                if (this._renderGen !== gen) return;
 
                 // Linked STF stretch
                 if (this.applySTF) {
@@ -393,7 +407,9 @@ var MainDialog = class extends Dialog {
                     HT.H = H;
                     HT.executeOn(tempView);
 
+                    if (this._renderGen !== gen) return;
                 }
+
                 // Midtones
                 if (this.midtones !== 0.5) {
                     let HT2 = new HistogramTransformation;
@@ -402,6 +418,8 @@ var MainDialog = class extends Dialog {
                     H2[3][3] = 0; H2[3][4] = 1;
                     HT2.H = H2;
                     HT2.executeOn(tempView);
+
+                    if (this._renderGen !== gen) return;
                 }
 
                 // Saturation
@@ -412,6 +430,8 @@ var MainDialog = class extends Dialog {
                     curves.c = [[0, 0], [xClip, 1.0], [1.0, 1.0]];
                     curves.ct = CurvesTransformation.Linear;
                     curves.executeOn(tempView);
+
+                    if (this._renderGen !== gen) return;
                 }
 
                 let bitmap = tempView.image.render();
