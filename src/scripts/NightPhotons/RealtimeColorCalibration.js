@@ -16,9 +16,9 @@ var MainDialog = class extends Dialog {
         super();
         var dlg = this;
 
-        this.windowTitle = TITLE + " " + VERSION;
+        this.windowTitle = TITLE;
 
-        // Per-session state
+        // Defaults
         this.currentView = null;
         this.bgRefView = null;
         this.rWeight = 1.0;
@@ -52,14 +52,23 @@ var MainDialog = class extends Dialog {
             return true;
         };
 
+        this.preview_Group = new GroupBox(this);
+        this.preview_Group.title = "Real-time Preview";
+        this.preview_Group.sizer = new VerticalSizer;
+        this.preview_Group.sizer.margin = 6;
+        this.preview_Group.sizer.spacing = 4;
+        this.preview_Group.sizer.add(this.previewControl);
+
+
         // Description & Title
         this.label = new Label(this);
         this.label.wordWrapping = true;
         this.label.useRichText = true;
         this.label.margin = 4;
         this.label.text = "<p><b>" + TITLE + " v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>A minimal implementation of manual color calibration with a realtime preview, stf stretch, and saturation.</p>"
-            + "<p><i>Create a process icon with the view IDs and apply as a process icon to run without opening the dialog.</i></p>";
+            + "<p>A minimal implementation of manual color calibration with a realtime preview, stf stretch, and saturation. "
+            + "Select a linear, background neutralized, color source image and background reference.</p>"
+            + "<p><i>Create a process icon with the new instance button to launch the dialog without finding the script.</i></p>";
 
         // Views Group
         this.source_Label = new Label(this);
@@ -71,8 +80,17 @@ var MainDialog = class extends Dialog {
         this.source_List.getAll();
         this.source_List.toolTip = "<p>Select an open view to display in the preview.</p>";
         this.source_List.onViewSelected = function (view) {
-            dlg.currentView = view.isNull ? null : view;
-            dlg.debouncedUpdate();
+            if (view.isNull) {
+                dlg.bgRefView = null; 
+                return;
+            }
+            if (view.image.isColor) {
+                dlg.currentView = view;
+                dlg.debouncedUpdate();
+            } else {
+                console.warningln("Warning: Color calibration can only be performed on color images. Please select a color image.");
+                console.show();
+            }
         };
 
         this.source_Sizer = new HorizontalSizer;
@@ -89,9 +107,17 @@ var MainDialog = class extends Dialog {
         this.bgRef_List.getAll();
         this.bgRef_List.toolTip = "<p>Background reference view for preserving neutral backgrounds after color calibration.</p>";
         this.bgRef_List.onViewSelected = function (view) {
-            dlg.bgRefView = view.isNull ? null : view;
-            if (dlg.applySTF)
+            if (view.isNull) {
+                dlg.bgRefView = null; 
+                return;
+            }
+            if (view.image.isColor) {
+                dlg.bgRefView = view;
                 dlg.debouncedUpdate();
+            } else {
+                console.warningln("Warning: Background reference must be a color image. Please select a color image.");
+                console.show();
+            }
         };
 
         this.bgRef_Sizer = new HorizontalSizer;
@@ -222,6 +248,14 @@ var MainDialog = class extends Dialog {
             this.dialog.newInstance();
         };
 
+        this.apply_Button = new PushButton(this);
+        this.apply_Button.text = "Apply";
+        this.apply_Button.icon = this.scaledResource(":/icons/ok.png");
+        this.apply_Button.toolTip = "<p>Apply the white balance to the source view. "
+            + "STF, midtones, and saturation are not applied. "
+            + "Sliders reset to neutral afterward.</p>";
+        this.apply_Button.onClick = function () { dlg.applyWhiteBalance(); };
+
         this.refresh_Button = new PushButton(this);
         this.refresh_Button.text = "Refresh";
         this.refresh_Button.icon = this.scaledResource(":/icons/reload.png");
@@ -241,6 +275,7 @@ var MainDialog = class extends Dialog {
         this.buttons_Sizer.spacing = 6;
         this.buttons_Sizer.add(this.newInstance_Button);
         this.buttons_Sizer.addStretch();
+        this.buttons_Sizer.add(this.apply_Button);
         this.buttons_Sizer.add(this.refresh_Button);
         this.buttons_Sizer.add(this.close_Button);
 
@@ -259,12 +294,38 @@ var MainDialog = class extends Dialog {
         this.sizer = new HorizontalSizer;
         this.sizer.margin = 8;
         this.sizer.spacing = 8;
-        this.sizer.add(this.previewControl, 100);
+        this.sizer.add(this.preview_Group, 100);
         this.sizer.add(this.right_Sizer);
 
         this.ensureLayoutUpdated();
         this.resize(this.logicalPixelsToPhysical(1400), this.logicalPixelsToPhysical(900));
 
+
+        // Shared helper — builds and runs the WB PixelMath on any target view.
+        // Medians are always sampled from the background reference (or source as fallback).
+        this.executeWhiteBalance = function (targetView) {
+            let refImg  = (this.bgRefView && !this.bgRefView.isNull)
+                          ? this.bgRefView.image : this.currentView.image;
+            let refRect = new Rect(0, 0, refImg.width, refImg.height);
+            let nRefCh  = refImg.isColor ? 3 : 1;
+            let medR    = refImg.median(refRect, 0, 0);
+            let medG    = (nRefCh > 1) ? refImg.median(refRect, 1, 1) : medR;
+            let medB    = (nRefCh > 2) ? refImg.median(refRect, 2, 2) : medR;
+
+            let pm = new PixelMath;
+            pm.expression0         = format("($T - %.6f)*%.6f + %.6f", medR, this.rWeight, medR);
+            pm.expression1         = format("($T - %.6f)*%.6f + %.6f", medG, this.gWeight, medG);
+            pm.expression2         = format("($T - %.6f)*%.6f + %.6f", medB, this.bWeight, medB);
+            pm.useSingleExpression = false;
+            pm.generateOutput      = true;
+            pm.optimization        = true;
+            pm.rescale             = false;
+            pm.truncate            = true;
+            pm.truncateLower       = 0;
+            pm.truncateUpper       = 1;
+            pm.createNewImage      = false;
+            pm.executeOn(targetView);
+        };
 
         this.updatePreview = function () {
             let view = this.currentView;
@@ -284,30 +345,8 @@ var MainDialog = class extends Dialog {
                 tempView.endProcess();
 
                 // White balance
-                if (img.isColor &&
-                    (this.rWeight !== 1.0 || this.gWeight !== 1.0 || this.bWeight !== 1.0)) {
-                    let refImg = (this.bgRefView && !this.bgRefView.isNull)
-                        ? this.bgRefView.image : view.image;
-                    let refRect = new Rect(0, 0, refImg.width, refImg.height);
-                    let nRefCh = refImg.isColor ? 3 : 1;
-                    let medR = refImg.median(refRect, 0, 0);
-                    let medG = (nRefCh > 1) ? refImg.median(refRect, 1, 1) : medR;
-                    let medB = (nRefCh > 2) ? refImg.median(refRect, 2, 2) : medR;
-
-                    let pm = new PixelMath;
-                    pm.expression0 = format("($T - %.6f)*%.6f + %.6f", medR, this.rWeight, medR);
-                    pm.expression1 = format("($T - %.6f)*%.6f + %.6f", medG, this.gWeight, medG);
-                    pm.expression2 = format("($T - %.6f)*%.6f + %.6f", medB, this.bWeight, medB);
-                    pm.useSingleExpression = false;
-                    pm.generateOutput = true;
-                    pm.optimization = true;
-                    pm.rescale = false;
-                    pm.truncate = true;
-                    pm.truncateLower = 0;
-                    pm.truncateUpper = 1;
-                    pm.createNewImage = false;
-                    pm.executeOn(tempView);
-                }
+                if (img.isColor && (this.rWeight !== 1.0 || this.gWeight !== 1.0 || this.bWeight !== 1.0))
+                    this.executeWhiteBalance(tempView);
 
                 // Linked STF stretch
                 if (this.applySTF) {
@@ -335,7 +374,7 @@ var MainDialog = class extends Dialog {
                     HT.executeOn(tempView);
 
                 }
-                // Additional midtones
+                // Midtones
                 if (this.midtones !== 0.5) {
                     let HT2 = new HistogramTransformation;
                     let H2 = HT2.H;
@@ -371,6 +410,25 @@ var MainDialog = class extends Dialog {
                 if (tempWindow && !tempWindow.isNull)
                     tempWindow.forceClose();
             }
+        };
+
+        this.applyWhiteBalance = function () {
+            let view = this.currentView;
+            if (!view || view.isNull || view.image.isEmpty || !view.image.isColor)
+                return;
+
+            this.executeWhiteBalance(view);
+
+            // Reset sliders
+            this.rWeight = 1.0;
+            this.gWeight = 1.0;
+            this.bWeight = 1.0;
+            this.red_Control.setValue(1.0);
+            this.green_Control.setValue(1.0);
+            this.blue_Control.setValue(1.0);
+
+            this.debounceTimer.stop();
+            this.updatePreview();
         };
     }
 };
