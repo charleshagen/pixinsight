@@ -28,7 +28,7 @@ var MainDialog = class extends Dialog {
         this.applySTF = true;
         this.midtones = 0.5;
         this.saturation = 1.0;
-        this.neutralizeBg = false;
+        this.neutralizeBg = true;
 
         this.debounceTimer = new Timer(0.4, false);
         this.debounceTimer.onTimeout = function () { dlg.updatePreview(); };
@@ -68,9 +68,10 @@ var MainDialog = class extends Dialog {
         this.label.useRichText = true;
         this.label.margin = 4;
         this.label.text = "<p><b>" + TITLE + " v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>A minimal implementation of manual color calibration with a realtime preview, stf stretch, and saturation. "
-            + "Select a linear, background neutralized, color source image and background reference.</p>"
-            + "<p><i>Create a process icon with the new instance button to launch the dialog without finding the script.</i></p>";
+            + "<p>Provide a primary image view and a reference image or preview to apply manual color calibration with a realtime "
+            + "preview, stf stretch, midtones transform, and saturation. Once the adjustments are complete, press the Apply button "
+            + "to apply only the white balance and background neutralization to the target image.</p>"
+            + "<p><i>Create a process icon with the new instance button to launch the dialog on the active image.</i></p>";
 
         // Views Group
         this.source_Label = new Label(this);
@@ -136,6 +137,16 @@ var MainDialog = class extends Dialog {
         this.views_Group.sizer.add(this.bgRef_Sizer);
 
         // White Balance Group
+        this.neutralizeBg_Check = new CheckBox(this);
+        this.neutralizeBg_Check.text = "Neutralize Background";
+        this.neutralizeBg_Check.checked = this.neutralizeBg;
+        this.neutralizeBg_Check.toolTip = "<p>When enabled, all channels add back the minimum of the three "
+            + "reference channel medians instead of each channel's own median, neutralizing the background color.</p>";
+        this.neutralizeBg_Check.onCheck = function (checked) {
+            dlg.neutralizeBg = checked;
+            dlg.debouncedUpdate();
+        };
+
         this.red_Control = new NumericControl(this);
         this.red_Control.label.text = "Red:";
         this.red_Control.label.minWidth = wbLabelWidth;
@@ -175,25 +186,17 @@ var MainDialog = class extends Dialog {
             dlg.debouncedUpdate();
         };
 
-        this.neutralizeBg_Check = new CheckBox(this);
-        this.neutralizeBg_Check.text = "Neutralize Background";
-        this.neutralizeBg_Check.checked = false;
-        this.neutralizeBg_Check.toolTip = "<p>When enabled, all channels add back the minimum of the three "
-            + "reference channel medians instead of each channel's own median, neutralizing the background color.</p>";
-        this.neutralizeBg_Check.onCheck = function (checked) {
-            dlg.neutralizeBg = checked;
-            dlg.debouncedUpdate();
-        };
 
         this.wb_Group = new GroupBox(this);
         this.wb_Group.title = "White Balance";
         this.wb_Group.sizer = new VerticalSizer;
         this.wb_Group.sizer.margin = 6;
         this.wb_Group.sizer.spacing = 4;
+        this.wb_Group.sizer.add(this.neutralizeBg_Check);
+        this.wb_Group.sizer.addSpacing(4);
         this.wb_Group.sizer.add(this.red_Control);
         this.wb_Group.sizer.add(this.green_Control);
         this.wb_Group.sizer.add(this.blue_Control);
-        this.wb_Group.sizer.add(this.neutralizeBg_Check);
 
         // Stretch Group
         this.applySTF_Check = new CheckBox(this);
@@ -265,9 +268,11 @@ var MainDialog = class extends Dialog {
         this.apply_Button.text = "Apply";
         this.apply_Button.icon = this.scaledResource(":/icons/ok.png");
         this.apply_Button.toolTip = "<p>Apply the white balance and background neutralization to the source view. "
-            + "STF, midtones, and saturation are not applied. "
-            + "White balance sliders reset to neutral afterward.</p>";
-        this.apply_Button.onClick = function () { dlg.applyWhiteBalance(); };
+            + "STF, midtones, and saturation are not applied.</p>";
+        this.apply_Button.onClick = function () { 
+            dlg.applyWhiteBalance(); 
+            this.dialog.ok();
+        };
 
         this.refresh_Button = new PushButton(this);
         this.refresh_Button.text = "Refresh";
@@ -313,9 +318,6 @@ var MainDialog = class extends Dialog {
         this.ensureLayoutUpdated();
         this.resize(this.logicalPixelsToPhysical(1400), this.logicalPixelsToPhysical(900));
 
-
-        // Shared helper — builds and runs the WB PixelMath on any target view.
-        // Medians are always sampled from the background reference (or source as fallback).
         this.executeWhiteBalance = function (targetView) {
             let refImg  = (this.bgRefView && !this.bgRefView.isNull)
                           ? this.bgRefView.image : this.currentView.image;
@@ -432,21 +434,13 @@ var MainDialog = class extends Dialog {
 
         this.applyWhiteBalance = function () {
             let view = this.currentView;
-            if (!view || view.isNull || view.image.isEmpty || !view.image.isColor)
+            if (!view || view.isNull || view.image.isEmpty || !view.image.isColor) {
+                console.criticalln("Error: Unable to apply white balance!");
+                console.show();
                 return;
+            }
 
             this.executeWhiteBalance(view);
-
-            // Reset sliders
-            this.rWeight = 1.0;
-            this.gWeight = 1.0;
-            this.bWeight = 1.0;
-            this.red_Control.setValue(1.0);
-            this.green_Control.setValue(1.0);
-            this.blue_Control.setValue(1.0);
-
-            this.debounceTimer.stop();
-            this.updatePreview();
         };
     }
 };
