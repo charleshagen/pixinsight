@@ -229,8 +229,29 @@ function continuumSubtract() {
     let bbStarViews = ToolParameters.bbChannels.map(ch => ch.starView);
     let nChannels   = bbStarViews.length;
 
-    // Star detection (on primary broadband channel)
-    let stars = detectStars(bbStarViews[0].image);
+    // Star detection on a temporary average of all broadband channels
+    let detectionView = bbStarViews[0]; // fallback for single-channel case
+    if (nChannels > 1) {
+        let detExpr   = "(" + bbStarViews.map(v => v.id).join("+") + ")/" + nChannels;
+        let detCompId = generateValidID("_pcs_detection");
+        let Pdet = new PixelMath;
+        Pdet.expression          = detExpr;
+        Pdet.useSingleExpression = true;
+        Pdet.generateOutput      = true;
+        Pdet.optimization        = true;
+        Pdet.createNewImage      = true;
+        Pdet.showNewImage        = false;
+        Pdet.newImageId          = detCompId;
+        Pdet.newImageColorSpace  = PixelMath.Gray;
+        Pdet.executeOn(bbStarViews[0]);
+        let v = View.viewById(detCompId);
+        if (v != null) detectionView = v;
+        else console.warningln("Warning: Could not create detection composite; falling back to first channel.");
+    }
+
+    let stars = detectStars(detectionView.image);
+    if (nChannels > 1 && detectionView !== bbStarViews[0]) detectionView.window.forceClose();
+
     if (stars.length === 0) {
         console.criticalln("Error: No stars detected. Try adjusting the maximum star peak parameter.");
         console.show(); return;
