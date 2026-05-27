@@ -29,6 +29,7 @@ var MainDialog = class extends Dialog {
         this.midtones = 0.5;
         this.saturation = 1.0;
         this.neutralizeBg = true;
+        this.applyToMainView = true
 
         this._renderPending = false;
         this._renderGen = 0;
@@ -55,32 +56,16 @@ var MainDialog = class extends Dialog {
         var wbLabelWidth = this.font.width("Green: ");
         var panelWidth = this.font.width("<p><b>" + TITLE + " v" + VERSION + "</b> | Charles Hagen</p>");
 
-        // Preview
-        this.previewControl = new ImageView(this);
-        this.onClose = function () {
-            this.debounceTimer.stop();
-            this.previewControl.reset();
-            return true;
-        };
-
-        this.preview_Group = new GroupBox(this);
-        this.preview_Group.title = "Real-time Preview";
-        this.preview_Group.sizer = new VerticalSizer;
-        this.preview_Group.sizer.margin = 6;
-        this.preview_Group.sizer.spacing = 4;
-        this.preview_Group.sizer.add(this.previewControl);
-
-
         // Description & Title
         this.label = new Label(this);
         this.label.wordWrapping = true;
         this.label.useRichText = true;
         this.label.margin = 4;
         this.label.text = "<p><b>" + TITLE + " v" + VERSION + "</b> | Charles Hagen</p>"
-            + "<p>Provide a primary image or preview and a background reference image or preview to apply manual color calibration with "
-            + "a real-time preview, stf stretch, midtones transform, and saturation. If no background reference is provided, the median "
-            + "of the primary image will be used as the black point. Once the adjustments are complete, press the Apply button to apply "
-            + "only the white balance and background neutralization to the target image.</p>"
+            + "<p>Provide a primary image or preview and a background reference image or preview to apply background neutralization and "
+            + "manual color calibration with a real-time preview, stf stretch, midtones transform, and saturation. If no background "
+            + "reference is provided, the median of the primary image will be used as the neutral point. Once the adjustments are complete, "
+            + "press the Apply button to apply only the white balance and background neutralization to the target image.</p>"
             + "<p><i>Create a process icon with the new instance button to launch the dialog on the active image.</i></p>";
 
         // Views Group
@@ -99,6 +84,9 @@ var MainDialog = class extends Dialog {
             }
             if (view.image.isColor) {
                 dlg.currentView = view;
+                if (view.isPreview) {
+                    view.historyIndex = 0;
+                }
                 dlg.debouncedUpdate();
             } else {
                 console.warningln("Warning: Color calibration can only be performed on color images. Please select a color image.");
@@ -122,10 +110,14 @@ var MainDialog = class extends Dialog {
         this.bgRef_List.onViewSelected = function (view) {
             if (view.isNull) {
                 dlg.bgRefView = null; 
+                dlg.debouncedUpdate();
                 return;
             }
             if (view.image.isColor) {
                 dlg.bgRefView = view;
+                if (view.isPreview) {
+                    view.historyIndex = 0;
+                }
                 dlg.debouncedUpdate();
             } else {
                 console.warningln("Warning: Background reference must be a color image. Please select a color image.");
@@ -259,6 +251,22 @@ var MainDialog = class extends Dialog {
         this.sat_Group.sizer.margin = 6;
         this.sat_Group.sizer.add(this.sat_Control);
 
+        // Settings Group
+        this.applyToMainView_Check = new CheckBox(this);
+        this.applyToMainView_Check.text = "Apply to Main View";
+        this.applyToMainView_Check.checked = true;
+        this.applyToMainView_Check.toolTip = "<p>If the source view is a preview, apply the color calibration to its parent, the main view.</p>";
+        this.applyToMainView_Check.onCheck = function (checked) {
+            dlg.applyToMainView = checked;
+        };
+
+        this.settings_Group = new GroupBox(this);
+        this.settings_Group.title = "Settings";
+        this.settings_Group.sizer = new VerticalSizer;
+        this.settings_Group.sizer.margin = 6;
+        this.settings_Group.sizer.add(this.applyToMainView_Check);
+        this.settings_Group.sizer.addSpacing(4);
+
         // -------------------------------------------------------------------------
         // Bottom button row
         // -------------------------------------------------------------------------
@@ -314,15 +322,38 @@ var MainDialog = class extends Dialog {
         this.left_Sizer.add(this.wb_Group);
         this.left_Sizer.add(this.stretch_Group);
         this.left_Sizer.add(this.sat_Group);
+        this.left_Sizer.add(this.settings_Group);
         this.left_Sizer.addStretch();
-        this.left_Sizer.add(this.buttons_Sizer);
+
+        // Preview
+        this.previewControl = new ImageView(this);
+        this.onClose = function () {
+            this.debounceTimer.stop();
+            this.previewControl.reset();
+            return true;
+        };
+
+        this.preview_Group = new GroupBox(this);
+        this.preview_Group.title = "Real-time Preview";
+        this.preview_Group.sizer = new VerticalSizer;
+        this.preview_Group.sizer.margin = 6;
+        this.preview_Group.sizer.spacing = 4;
+        this.preview_Group.sizer.add(this.previewControl);
 
         // Full dialog sizer
-        this.sizer = new HorizontalSizer;
+        this.content_sizer = new HorizontalSizer;
+        this.content_sizer.margin = 8;
+        this.content_sizer.spacing = 8;
+        this.content_sizer.add(this.left_Sizer);
+        this.content_sizer.add(this.preview_Group, 120);
+
+        this.sizer = new VerticalSizer;
         this.sizer.margin = 8;
-        this.sizer.spacing = 8;
-        this.sizer.add(this.left_Sizer);
-        this.sizer.add(this.preview_Group, 120);
+        this.sizer.spacing = 8
+        this.sizer.add(this.content_sizer);
+        this.sizer.add(this.buttons_Sizer);
+
+
 
         this.ensureLayoutUpdated();
         this.resize(this.logicalPixelsToPhysical(1400), this.logicalPixelsToPhysical(900));
@@ -454,6 +485,10 @@ var MainDialog = class extends Dialog {
 
         this.applyWhiteBalance = function () {
             let view = this.currentView;
+            if (this.currentView.isPreview && this.applyToMainView) {
+                view = this.currentView.window.mainView; 
+            }
+
             if (!view || view.isNull || view.image.isEmpty || !view.image.isColor) {
                 console.criticalln("Error: Unable to apply white balance!");
                 console.show();
@@ -475,10 +510,10 @@ function mtf(m, x) {
 
 function main() {
     let dlg = new MainDialog();
-    if (Parameters.isViewTarget) {
-        let view = Parameters.targetView;
-        dlg.source_List.currentView = view;
-        dlg.currentView = view;
+    var active = ImageWindow.activeWindow.currentView;
+    if (active.image.isColor) {
+        dlg.source_List.currentView = active;
+        dlg.currentView = active;
         dlg.updatePreview();
     }
     dlg.execute();
