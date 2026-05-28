@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <defs>
+      <radialGradient id="e" cx="439.79" cy="411.11" r="59.916" gradientTransform="matrix(1.666 -.030168 .030489 1.6837 -479.3 -572.94)" gradientUnits="userSpaceOnUse" xlink:href="#a"/>
+      <linearGradient id="a"><stop stop-color="#e6e6e6" offset="0"/><stop stop-color="#2d2d2d" offset="1"/></linearGradient><radialGradient id="f" cx="439.79" cy="411.11" r="59.916" gradientTransform="matrix(1.666 -.030168 .030489 1.6837 -479.58 -316.07)" gradientUnits="userSpaceOnUse" xlink:href="#a"/>
+      <linearGradient id="g" x1="176.81" x2="461.78" y1="235.82" y2="252.42" gradientTransform="translate(.0010244 .0010219)" gradientUnits="userSpaceOnUse"><stop offset="0"/><stop stop-color="#838383" offset="1"/></linearGradient>
+   </defs>
+   <rect x="36" y="36" width="440" height="440" fill="url(#g)" stroke="#000" stroke-width="24"/>
+   <g transform="matrix(1.0021 0 0 1.0023 -.54722 -.22847)" stroke-width="2.0125">
+      <path d="m48.445 324.82 220.2-48.827h194.93v40.5h-195.1l-220.03 146.68z" fill="#f00"/>
+      <path d="m48.445 186.47 219.8 49.024h195.33v40.5h-195.85l-219.27 48.827z" fill="#0f0"/>
+      <path d="m48.445 48.118 220.41 146.87h194.72v40.5l-195.4 0.0242-219.72-49.048z" fill="#1f84ff"/>
+   </g>
+   <ellipse cx="287.36" cy="127.22" rx="69.93" ry="69.927" fill="url(#e)" stroke-width=".99993"/>
+   <ellipse cx="287.08" cy="384.09" rx="69.93" ry="69.927" fill="url(#f)" stroke-width=".99993"/>
+   <rect x="36" y="36" width="440" height="440" fill="none" stroke="#000" stroke-width="24"/>
+   <g transform="translate(141, 161) scale(14.5)" fill="#1d6bfc">
+      <rect width="16" height="16" id="icon-bound" fill="none"/>
+      <path stroke="#ffffff" stroke-width="0.3" d="M0.292,15.001l0.707,0.707c0.389,0.389,1.025,0.389,1.414,0l3.675-3.675C7.08,12.646,8.249,13,9.5,13 c3.59,0,6.5-2.91,6.5-6.5S13.09,0,9.5,0S3,2.91,3,6.5c0,1.251,0.354,2.42,0.967,3.412l-3.675,3.675 C-0.097,13.976-0.097,14.612,0.292,15.001z M9.5,11c-1.202,0-2.332-0.468-3.182-1.318C5.468,8.832,5,7.702,5,6.5 s0.468-2.332,1.318-3.182S8.298,2,9.5,2s2.332,0.468,3.182,1.318C13.532,4.168,14,5.298,14,6.5s-0.468,2.332-1.318,3.182 C11.832,10.532,10.702,11,9.5,11z" />
+   </g>     
+</svg>
