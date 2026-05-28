@@ -6,11 +6,13 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.4:1.9.10">
-      <package fileName="nightphotons-2026-05-27.zip" sha1="6ec0bb343835ba59d563c8d2882e74c671a4f45f" type="script" releaseDate="20260527">
+      <package fileName="nightphotons-2026-05-27.zip" sha1="367b7d83bec7fec4b6eabd04407685eac6d0c6fb" type="script" releaseDate="20260527">
          <title>
             NightPhotons processing suite 2026-05-27
          </title>
          <description>
+            <h3>PhotometricContinuumSubtraction: Release 1.4.0</h3>
+            <p>New implementation of the photometric routine allows for multiple broadband images to be considered when building a continuum model. Using a robust optimization algorithm with outlier rejection, the model finds optimal weights for all provided channels to minimize stellar flux, thus producing a more accurate continuum model. </p>
             <h3>RealtimeColorCalibration: Release 1.0.0</h3>
             <p>Color calibration interface with a real-time preview, auto STF, midtones adjustment, and saturation to improve the manual white balance workflow.</p>
          </description>
@@ -41,4 +43,4 @@
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2026-05-28T04:45:17.301Z" encoding="Base64">8DPJ7+Kl0yiRx40Td72s0DePmzqMI9c1NuEFF4xbC3+bgtw8GqaR+6Hl8vHvL39Ffdugt1ARXzPQ9P9htQ0mBQ==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2026-05-28T05:08:01.255Z" encoding="Base64">JH/6SbWvAgaAz9pSDUY+T28b8nr6SPZwy97rCKqnt8KFbu/1adBTlecSutey7VXKiVifjyZkANsLGvBvHIepDA==</Signature>
