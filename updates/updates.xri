@@ -6,15 +6,13 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.4:1.9.10">
-      <package fileName="nightphotons-2026-05-25.zip" sha1="58249ccf562191895146f18581bb3f5689833e3e" type="script" releaseDate="20260525">
+      <package fileName="nightphotons-2026-05-27.zip" sha1="e0bc16f1299d327ac8d6d0421787a441f32b0d71" type="script" releaseDate="20260527">
          <title>
-            NightPhotons processing suite 2026-05-25
+            NightPhotons processing suite 2026-05-27
          </title>
          <description>
-            <h3>PhotometricContinuumSubtraction: Release 1.3.1</h3>
-            <ul>
-               <li>Bug fixes</li>
-            </ul>
+            <h3>RealtimeColorCalibration: Release 1.0.0</h3>
+            <p>Color calibration interface with a real-time preview, auto STF, midtones adjustment, and saturation to improve the manual white balance workflow.</p>
          </description>
       </package>
    </platform>
@@ -43,4 +41,4 @@
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2026-05-25T17:11:36.914Z" encoding="Base64">RHCsDiiivcaZGSgisE0Iimbiu78TfITskpC6ggZMLChKHclXk0RUpCdXRGcyBwKiU944NDeOmMEx6NyvtlqGCg==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2026-05-28T04:18:28.533Z" encoding="Base64">IEi4ET9L7URuvb5mlN/hUdRW2eqTnhSOt+ku9KXW4ewYiGjAebkfLUoFjjAx3YMtlswAnO4YAGJ9xQ3AMD7tDA==</Signature>
