@@ -6,7 +6,7 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.4:1.9.10">
-      <package fileName="nightphotons-2026-05-27.zip" sha1="e0bc16f1299d327ac8d6d0421787a441f32b0d71" type="script" releaseDate="20260527">
+      <package fileName="nightphotons-2026-05-27.zip" sha1="728d8c1366c5fa0889a696d90759cbd46424cbe3" type="script" releaseDate="20260527">
          <title>
             NightPhotons processing suite 2026-05-27
          </title>
@@ -41,4 +41,4 @@
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2026-05-28T04:18:28.533Z" encoding="Base64">IEi4ET9L7URuvb5mlN/hUdRW2eqTnhSOt+ku9KXW4ewYiGjAebkfLUoFjjAx3YMtlswAnO4YAGJ9xQ3AMD7tDA==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2026-05-28T04:23:26.698Z" encoding="Base64">TAQON+jK/DKkl58w+D3FZQ/xQ8mt5nm/2NioYBa4FYNh4tI1IMJ2qNvFeCLWHfTsfZ1mwTPRi85fRC8i7txCAg==</Signature>

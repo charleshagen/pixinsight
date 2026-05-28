@@ -511,7 +511,7 @@ function mtf(m, x) {
 function main() {
     let dlg = new MainDialog();
     var active = ImageWindow.activeWindow.currentView;
-    if (active.image.isColor) {
+    if (active != null && active.image.isColor) {
         dlg.source_List.currentView = active;
         dlg.currentView = active;
         dlg.updatePreview();
