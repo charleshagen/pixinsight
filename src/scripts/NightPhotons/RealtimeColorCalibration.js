@@ -287,8 +287,9 @@ var MainDialog = class extends Dialog {
         this.apply_Button.toolTip = "<p>Apply the white balance and background neutralization to the source view. "
             + "STF, midtones, and saturation are not applied.</p>";
         this.apply_Button.onClick = function () { 
-            dlg.applyWhiteBalance(); 
-            this.dialog.ok();
+            if (dlg.applyWhiteBalance()) {
+                this.dialog.ok();
+            } 
         };
 
         this.refresh_Button = new PushButton(this);
@@ -485,17 +486,31 @@ var MainDialog = class extends Dialog {
 
         this.applyWhiteBalance = function () {
             let view = this.currentView;
+
+            if (!view || view.isNull) {
+                console.warningln("Warning: Unable to apply white balance to an empty view! Define a source view.");
+                console.show();
+                return false;
+            }
+
             if (this.currentView.isPreview && this.applyToMainView) {
                 view = this.currentView.window.mainView; 
             }
 
-            if (!view || view.isNull || view.image.isEmpty || !view.image.isColor) {
-                console.criticalln("Error: Unable to apply white balance!");
+            if (!view || view.isNull || view.image.isEmpty) {
+                console.warningln("Warning: Unable to apply white balance to an empty view! Define a source view.");
                 console.show();
-                return;
+                return false;
+            }
+
+            if (!view.image.isColor) {
+                console.warningln("Warning: Unable to apply white balance to a grayscale view! Define a color source view.");
+                console.show();
+                return false;
             }
 
             this.executeWhiteBalance(view);
+            return true;
         };
     }
 };
