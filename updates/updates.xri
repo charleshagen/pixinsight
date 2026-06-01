@@ -6,9 +6,9 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.4:1.9.10">
-      <package fileName="nightphotons-2026-05-27.zip" sha1="6ec0bb343835ba59d563c8d2882e74c671a4f45f" type="script" releaseDate="20260527">
+      <package fileName="nightphotons-2026-06-01.zip" sha1="be86ab8749f397641590f81c3aa7d7cdc06b5f72" type="script" releaseDate="20260601">
          <title>
-            NightPhotons processing suite 2026-05-27
+            NightPhotons processing suite 2026-06-01
          </title>
          <description>
             <h3>RealtimeColorCalibration: Release 1.0.0</h3>
@@ -41,4 +41,4 @@
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2026-05-28T04:45:17.301Z" encoding="Base64">8DPJ7+Kl0yiRx40Td72s0DePmzqMI9c1NuEFF4xbC3+bgtw8GqaR+6Hl8vHvL39Ffdugt1ARXzPQ9P9htQ0mBQ==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2026-06-01T15:27:49.959Z" encoding="Base64">p4GsAbL+YpfY2WBxAIrFo99sZhb7xU+6Dd7PHGI1L77RVbe4oxYK2guCSpbbKOrxtSO2isl/mODPn44AwJjNDg==</Signature>
