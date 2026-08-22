@@ -6,13 +6,13 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.4:1.9.10">
-      <package fileName="nightphotons-2026-08-09.zip" sha1="746cbc6909ded93bb668514c89f70b5e435ef58c" type="script" releaseDate="20260809">
+      <package fileName="nightphotons-2026-08-21.zip" sha1="e0782eacc30f93677aca06809d74c1e4929301fa" type="script" releaseDate="20260821">
          <title>
-            NightPhotons processing suite 2026-08-09
+            NightPhotons processing suite 2026-08-21
          </title>
          <description>
-            <h3>PhotometricContinuumSubtraction: Release 1.4.0</h3>
-            <p>New implementation of the photometric routine allows for multiple broadband images to be considered when building a continuum model. Using a robust optimization algorithm with outlier rejection, the model finds optimal weights for all provided channels to minimize stellar flux, thus producing a more accurate continuum model. </p>
+            <h3>PhotometricContinuumSubtraction: Release 1.4.1</h3>
+            <p>Fixed StarXTerminator on MacOS </p>
          </description>
       </package>
    </platform>
@@ -41,4 +41,4 @@
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2026-08-09T07:39:18.343Z" encoding="Base64">co6mNRKrkB+1UCM6fa5BTKEBotL/W9iAuZ4LiM3ifQ+W6DHHun6jxlrBOah03Csapb15lQlv9mE+hzeFO+BsBg==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2026-08-22T00:35:15.560Z" encoding="Base64">E86NIdIPob+zHOwcnL8OAw9idkqIB3L3NUR2M01T7nT/nZLrR1HIir0R5utTYVTZFcrawgI3Y+PMuS4ZDDbcCw==</Signature>

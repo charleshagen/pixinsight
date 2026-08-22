@@ -7,7 +7,7 @@
 CoreApplication.ensureMinimumVersion( 1, 9, 4 );
 
 #define TITLE "PhotometricContinuumSubtraction"
-#define VERSION "1.4.0"
+#define VERSION "1.4.1"
 
 var ToolParameters = {
     nbStarView:        undefined,
@@ -557,7 +557,8 @@ function removeStars(view) {
         case 1:
             try {
                 let P = new StarXTerminator;
-                P.ai_file = "StarXTerminator.11.pb";
+                P.ai_file = "StarXTerminator.11" +
+                    ((CoreApplication.platform == "macOS") ? ".mlpackage" : ".ai");
                 P.stars = false; P.unscreen = false; P.overlap = 0.20;
                 P.executeOn(view); return true;
             } catch (e) {
