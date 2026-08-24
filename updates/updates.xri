@@ -6,13 +6,13 @@
      </p>
    </description>
    <platform os="all" arch="noarch" version="1.9.4:1.9.10">
-      <package fileName="nightphotons-2026-08-21.zip" sha1="e0782eacc30f93677aca06809d74c1e4929301fa" type="script" releaseDate="20260821">
+      <package fileName="nightphotons-2026-08-23.zip" sha1="c92d52b0ec88fa46fe1e845d7b1a477bbe7938a7" type="script" releaseDate="20260823">
          <title>
-            NightPhotons processing suite 2026-08-21
+            NightPhotons processing suite 2026-08-23
          </title>
          <description>
-            <h3>PhotometricContinuumSubtraction: Release 1.4.1</h3>
-            <p>Fixed StarXTerminator on MacOS </p>
+            <h3>PhotometricContinuumSubtraction: Release 1.4.2</h3>
+            <p>Fixed StarXTerminator on Windows</p>
          </description>
       </package>
    </platform>
@@ -41,4 +41,4 @@
       </package>
    </platform>
 </xri>
-<Signature developerId="CharlesHagen" timestamp="2026-08-22T00:35:15.560Z" encoding="Base64">E86NIdIPob+zHOwcnL8OAw9idkqIB3L3NUR2M01T7nT/nZLrR1HIir0R5utTYVTZFcrawgI3Y+PMuS4ZDDbcCw==</Signature>
+<Signature developerId="CharlesHagen" timestamp="2026-08-24T05:12:05.934Z" encoding="Base64">j/UaNMQSkLgA/cWRvwlMGL30Bv7XfqKuIfUn7LSynfd/BEMbIkkJWGXyRa+d7Ums5kKm43/CFWqV04oAx6smBA==</Signature>
